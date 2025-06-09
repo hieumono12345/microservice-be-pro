@@ -1,0 +1,19 @@
+services:
+  nginx-waf:
+    image: openresty/openresty:alpine
+    container_name: nginx-waf
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-waf/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
+      - ./nginx-waf/lua:/usr/local/openresty/nginx/lua:ro
+      - ./certs/nginx:/etc/nginx/certs:ro
+      - ./nginx-waf/logs:/var/log/nginx
+    networks:
+      - pro_microservice-network
+    command: ["/usr/local/openresty/bin/openresty", "-g", "daemon off;"]
+
+networks:
+  pro_microservice-network:
+    external: true

@@ -1,0 +1,21 @@
+# Node.js
+**/node_modules/
+**/dist/
+# **/.env
+**/.env.*    # Cho từng môi trường (dev, prod...)
+
+# Logs
+**/logs/
+**/*.log
+
+# System
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# npm/yarn lock nếu dùng riêng cho từng service
+**/package-lock.json
+**/yarn.lock
