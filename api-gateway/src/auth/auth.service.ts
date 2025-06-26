@@ -4,6 +4,7 @@ import { RegisterDto, LoginDto } from './dto';
 import { firstValueFrom } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
+import { VaultService } from 'src/vault/vault.service';
 
 @Injectable()
 export class AuthService {
@@ -12,25 +13,37 @@ export class AuthService {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientKafka,
     private readonly configService: ConfigService,
+    private readonly vaultService:  VaultService
   ) {}
 
-  private encrypt(data: any): string {
+  private async encrypt(data: any): Promise<string> {
     try {
-      const key = this.configService.get<string>('AES_KEY');
-      if (!key) {
-        this.logger.error('AES_KEY is not defined in environment variables');
-        throw new HttpException('AES_KEY is missing', 500);
+      const keyHex = await this.vaultService.getAesKey();
+
+      if (!keyHex) {
+        this.logger.error('AES key is missing from Vault');
+        throw new HttpException('Encryption key not found', 500);
       }
 
-      const keyBuffer = Buffer.from(key, 'hex');
+      const keyBuffer = Buffer.from(keyHex, 'hex');
+      if (keyBuffer.length !== 32) {
+        this.logger.error(`Invalid AES key length: ${keyBuffer.length} bytes`);
+        throw new HttpException('Invalid AES key length', 500);
+      }
+
       const iv = crypto.randomBytes(16);
       const cipher = crypto.createCipheriv('aes-256-cbc', keyBuffer, iv);
-      let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'hex');
+      const jsonData = JSON.stringify(data);
+      
+      let encrypted = cipher.update(jsonData, 'utf8', 'hex');
       encrypted += cipher.final('hex');
-      this.logger.debug(`Encrypted data: ${iv.toString('hex')}:${encrypted}`);
-      return `${iv.toString('hex')}:${encrypted}`;
+
+      const result = `${iv.toString('hex')}:${encrypted}`;
+      this.logger.debug('Encryption successful');
+
+      return result;
     } catch (error) {
-      this.logger.error(`Encryption failed: ${error.message}`);
+      this.logger.error(`Encryption failed: ${error.message}`, error.stack);
       throw new HttpException('Encryption failed', 500);
     }
   }
@@ -71,7 +84,7 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     try {
-      const encryptedData = this.encrypt(loginDto);
+      const encryptedData = await this.encrypt(loginDto);
       this.logger.log(`Sending login request to Kafka: ${encryptedData}`);
       const response = await firstValueFrom(
         this.authClient.send('auth.login', encryptedData),

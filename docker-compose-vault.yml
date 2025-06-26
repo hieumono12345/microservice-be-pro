@@ -1,0 +1,16 @@
+services:
+  vault:
+    image: hashicorp/vault:latest
+    container_name: vault
+    ports:
+      - "8200:8200"  # Cổng HTTPS mặc định
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_API_ADDR: "https://localhost:8200"
+    volumes:
+      - ./vault/config:/vault/config
+      - ./vault/certs:/vault/certs
+      - ./vault/data:/vault/data
+      - ./vault/policies:/vault/policies
+    command: vault server -config=/vault/config/vault.hcl

@@ -2,9 +2,11 @@ import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { VaultModule } from 'src/vault/vault.module';
 
 @Module({
   imports: [
+    VaultModule,
     ClientsModule.register([
       {
         name: 'AUTH_SERVICE',

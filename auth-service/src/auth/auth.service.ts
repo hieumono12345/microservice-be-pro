@@ -8,6 +8,7 @@ import { JwtService } from './jwt.service';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { Logger } from '@nestjs/common';
+import { VaultService } from 'src/vault/vault.service';
 
 @Injectable()
 export class AuthService {
@@ -18,12 +19,14 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly vaultService: VaultService
   ) {}
 
-  private decrypt(encryptedData: string): any {
+  private async decrypt(encryptedData: string): Promise<any> {
     try {
       const [ivHex, encryptedHex] = encryptedData.split(':');
-      const key = this.configService.get<string>('AES_KEY');
+      // const key = this.configService.get<string>('AES_KEY');
+      const key = await this.vaultService.getAesKey();
       if (!key) {
         this.logger.error('AES_KEY is not defined in environment variables');
         throw new Error('AES_KEY is missing');
@@ -92,12 +95,12 @@ export class AuthService {
   }
 
   async handleRegister(encryptedData: string) {
-    const dto: RegisterDto = this.decrypt(encryptedData);
+    const dto: RegisterDto = await this.decrypt(encryptedData);
     return this.register(dto);
   }
 
   async handleLogin(encryptedData: string) {
-    const dto: LoginDto = this.decrypt(encryptedData);
+    const dto: LoginDto = await this.decrypt(encryptedData);
     return this.login(dto);
   }
 }
