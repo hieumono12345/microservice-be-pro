@@ -3,8 +3,8 @@ import * as Vault from 'node-vault';
 
 @Injectable()
 export class VaultService implements OnModuleInit {
-  private readonly roleId = '427e752d-18c9-cb5a-e10e-c61fbaa87e15';
-  private readonly secretId = '0e298744-3206-45b5-3d9b-3864d6156af2';
+  private readonly roleId = '3a3f9b9f-d366-d8a7-fbf2-b1d8e0755906';
+  private readonly secretId = '3699e530-58d8-d5cc-4790-c70b08c95b40';
   private tokenCreatedAt: number;
   private tokenTTL: number; // tính bằng giây
 
