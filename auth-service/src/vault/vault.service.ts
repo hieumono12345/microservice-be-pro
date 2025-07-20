@@ -1,10 +1,11 @@
+/* eslint-disable */
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import * as Vault from 'node-vault';
 
 @Injectable()
 export class VaultService implements OnModuleInit {
   private readonly roleId = '3a3f9b9f-d366-d8a7-fbf2-b1d8e0755906';
-  private readonly secretId = '3699e530-58d8-d5cc-4790-c70b08c95b40';
+  private readonly secretId = '62ac7c2d-4298-bedf-aef6-8f3d53ff5357';
   private tokenCreatedAt: number;
   private tokenTTL: number; // tính bằng giây
 

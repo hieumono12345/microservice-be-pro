@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -16,8 +17,8 @@ import { VaultModule } from 'src/vault/vault.module';
             brokers: ['localhost:29092'],
             sasl: {
               mechanism: 'plain',
-              username: 'admin',
-              password: 'admin-secret',
+              username: 'api-gateway',
+              password: 'api-secret',
             },
             ssl: false,
           },

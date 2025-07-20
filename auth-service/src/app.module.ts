@@ -3,8 +3,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { User } from './auth/entities/user.entity';
+import { UserSession } from './auth/entities/user-session.entity';
+import { EmailOtpCode } from './auth/entities/email-otp-code.entity';
 import * as fs from 'fs';
 import * as path from 'path';
+import { RevokedToken } from './auth/entities/revoked-token.entity';
 
 @Module({
   imports: [
@@ -23,7 +26,7 @@ import * as path from 'path';
           username: configService.get<string>('MYSQL_USERNAME', 'auth_user'),
           password: configService.get<string>('MYSQL_PASSWORD', 'auth_password'),
           database: configService.get<string>('MYSQL_DATABASE', 'auth_db'),
-          entities: [User],
+          entities: [User, UserSession, EmailOtpCode, RevokedToken],
           synchronize: configService.get<string>('NODE_ENV', 'development') === 'development',
           ssl: {
             ca: fs.readFileSync(path.join(certsPath, 'ca.crt')),

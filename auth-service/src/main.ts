@@ -12,8 +12,8 @@ async function bootstrap() {
         brokers: ['localhost:29092'],
         sasl: {
           mechanism: 'plain',
-          username: 'admin',
-          password: 'admin-secret',
+          username: 'auth-service',
+          password: 'auth-secret',
         },
         ssl: false,
       },

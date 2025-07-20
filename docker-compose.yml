@@ -60,11 +60,17 @@ services:
       MYSQL_DATABASE: auth_db
       MYSQL_USER: auth_user
       MYSQL_PASSWORD: auth_password
+
+      # Thêm DB và User cho products + orders
+      MYSQL_DATABASE_2: offline_db
+      MYSQL_USER_2: offline_user
+      MYSQL_PASSWORD_2: offline_password
     ports:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
       - ./certs/mysql:/etc/mysql/certs
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
     command: >
       --ssl-ca=/etc/mysql/certs/ca.crt
       --ssl-cert=/etc/mysql/certs/server.crt

@@ -1,14 +1,17 @@
+/* eslint-disable */
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as fs from 'fs';
 import * as https from 'https';
 import * as path from 'path';
 import { VaultService } from './vault/vault.service';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const vaultService = app.get(VaultService);
   await vaultService.onModuleInit(); // Login
+  app.use(cookieParser());
   const { key, cert } = await vaultService.getTlsCert();
 
   const httpsOptions = {
@@ -26,5 +29,6 @@ async function bootstrap() {
     server.listen(3443);
     console.log('API Gateway is running on HTTPS port 3443');
   });
+  
 }
 bootstrap();

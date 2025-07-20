@@ -1,10 +1,11 @@
+/* eslint-disable */
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import * as Vault from 'node-vault';
 
 @Injectable()
 export class VaultService implements OnModuleInit {
   private readonly roleId = '427e752d-18c9-cb5a-e10e-c61fbaa87e15';
-  private readonly secretId = 'e11aa4ee-1a42-606c-c0d2-8af03220948a';
+  private readonly secretId = 'd1b727c4-696f-e99d-fb15-35641bba7780';
   private tokenCreatedAt: number;
   private tokenTTL: number; // tính bằng giây
 
@@ -77,6 +78,7 @@ export class VaultService implements OnModuleInit {
     const secret = await this.vaultClient.read('secret-v2/data/api-gateway-tls');
     const key = secret.data.data.key;
     const cert = secret.data.data.cert;
+  
 
     return {
       key: Buffer.from(key),
