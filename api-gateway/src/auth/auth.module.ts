@@ -4,10 +4,12 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { VaultModule } from 'src/vault/vault.module';
+import { EncryptModule } from 'src/encrypt/encrypt.module';
 
 @Module({
   imports: [
     VaultModule,
+    EncryptModule,
     ClientsModule.register([
       {
         name: 'AUTH_SERVICE',
@@ -33,3 +35,4 @@ import { VaultModule } from 'src/vault/vault.module';
   providers: [AuthService],
 })
 export class AuthModule {}
+

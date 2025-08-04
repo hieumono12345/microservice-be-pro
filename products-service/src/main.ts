@@ -23,7 +23,6 @@ async function bootstrap() {
       },
     },
   });
-
   await app.listen();
   logger.log(`Auth Service is running in ${process.env.NODE_ENV || 'development'} mode`);
 }

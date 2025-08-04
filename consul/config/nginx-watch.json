@@ -1,0 +1,9 @@
+{
+  "watches": [
+    {
+      "type": "key",
+      "key": "nginx.conf",
+      "handler": "/sidecar/on-nginx-change.sh"
+    }
+  ]
+}

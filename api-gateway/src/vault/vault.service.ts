@@ -2,10 +2,12 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import * as Vault from 'node-vault';
 
+import * as https from 'https';
+
 @Injectable()
 export class VaultService implements OnModuleInit {
   private readonly roleId = '427e752d-18c9-cb5a-e10e-c61fbaa87e15';
-  private readonly secretId = 'd1b727c4-696f-e99d-fb15-35641bba7780';
+  private readonly secretId = 'e120099a-8fdc-4dcf-4fa1-cbd5a09419cf';
   private tokenCreatedAt: number;
   private tokenTTL: number; // tính bằng giây
 
@@ -14,6 +16,9 @@ export class VaultService implements OnModuleInit {
     endpoint: 'https://localhost:8200',
     requestOptions: {
       strictSSL: false, // Nếu dùng self-signed cert
+      // agent: new https.Agent({
+      //   rejectUnauthorized: false,
+      // }),
     },
   });
 
@@ -86,3 +91,6 @@ export class VaultService implements OnModuleInit {
     };
   }
 }
+
+
+

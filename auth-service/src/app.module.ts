@@ -21,11 +21,17 @@ import { RevokedToken } from './auth/entities/revoked-token.entity';
         const certsPath = path.join(__dirname, '..', '..', 'certs', 'mysql');
         return {
           type: 'mysql',
-          host: configService.get<string>('MYSQL_HOST', 'localhost'),
-          port: configService.get<number>('MYSQL_PORT', 3306),
-          username: configService.get<string>('MYSQL_USERNAME', 'auth_user'),
-          password: configService.get<string>('MYSQL_PASSWORD', 'auth_password'),
-          database: configService.get<string>('MYSQL_DATABASE', 'auth_db'),
+          // host: configService.get<string>('MYSQL_HOST', 'localhost'),
+          // port: configService.get<number>('MYSQL_PORT', 3306),
+          // username: configService.get<string>('MYSQL_USERNAME', 'auth_user'),
+          // password: configService.get<string>('MYSQL_PASSWORD', 'auth_password'),
+          // database: configService.get<string>('MYSQL_DATABASE', 'auth_db'),
+          host: 'localhost',
+          port: 3306,
+          username: 'auth_user',
+          password: 'auth_password',
+          database: 'auth_db',
+          // autoLoadEntities: true,
           entities: [User, UserSession, EmailOtpCode, RevokedToken],
           synchronize: configService.get<string>('NODE_ENV', 'development') === 'development',
           ssl: {

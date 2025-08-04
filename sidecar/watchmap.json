@@ -1,0 +1,23 @@
+[
+  {
+    "key": "nginx/nginx.conf",
+    "output": "/shared/nginx/nginx.conf",
+    "reload": "docker kill -s HUP nginx-waf"
+  },
+  {
+    "key": "kafka/kafka_server_jaas.conf",
+    "output": "/shared/kafka/kafka_server_jaas.conf",
+    "reload": "docker restart kafka"
+  },
+  {
+    "key": "zookeeper/zookeeper_jaas.conf",
+    "output": "/shared/zookeeper/zookeeper_jaas.conf",
+    "reload": "docker restart zookeeper",
+    "dependent_reload": "docker restart kafka"
+  },
+  {
+    "key": "vault/vault.hcl",
+    "output": "/shared/vault/vault.hcl",
+    "reload": "docker restart vault"
+  }
+]

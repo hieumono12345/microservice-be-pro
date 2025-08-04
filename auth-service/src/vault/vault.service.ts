@@ -5,7 +5,7 @@ import * as Vault from 'node-vault';
 @Injectable()
 export class VaultService implements OnModuleInit {
   private readonly roleId = '3a3f9b9f-d366-d8a7-fbf2-b1d8e0755906';
-  private readonly secretId = '62ac7c2d-4298-bedf-aef6-8f3d53ff5357';
+  private readonly secretId = '2ce60c8f-a3d3-4606-06ea-6ca5cd89f657';
   private tokenCreatedAt: number;
   private tokenTTL: number; // tính bằng giây
 
@@ -13,7 +13,7 @@ export class VaultService implements OnModuleInit {
     apiVersion: 'v1',
     endpoint: 'https://localhost:8200',
     requestOptions: {
-      strictSSL: false, // Nếu dùng self-signed cert
+      strictSSL: false, // Nếu dùng self-signed cert      
     },
   });
 
@@ -73,5 +73,5 @@ export class VaultService implements OnModuleInit {
     const secret = await this.vaultClient.read('secret-v2/data/api-key-gateway');
     return secret.data.data.key;
   }
-
 }
+

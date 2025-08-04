@@ -5,7 +5,10 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { Category } from './category.entity';
 
 @Entity('products')
 export class Product {
@@ -29,6 +32,10 @@ export class Product {
 
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
+
+  @ManyToOne(() => Category, (category) => category.products, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'category_id' })
+  category?: Category;
 
   @CreateDateColumn()
   createdAt: Date;

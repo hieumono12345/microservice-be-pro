@@ -12,7 +12,11 @@ local function contains_sql_injection(input)
         [[\bexecute\b]],
         [[\bdeclare\b]],
         [[\bcast\b]],
-        [[\bconvert\b]]
+        [[\bconvert\b]],
+        [[or\s+1=1]],
+        [[\b1=1\b]],
+        [[\b'or\b]],
+        [[--]]
     }
 
     for _, pattern in ipairs(sql_patterns) do
@@ -62,16 +66,21 @@ local function log_attack(attack_type, uri, args, body)
 end
 
 local function check_request()
+    
     local uri = ngx.var.uri
     local args = ngx.var.args or ""
     ngx.req.read_body()
     local body = ngx.req.get_body_data() or ""
+    
+    ngx.log(ngx.ERR, "[WAF] URI: ", uri)
+    ngx.log(ngx.ERR, "[WAF] Args: ", args)
+    ngx.log(ngx.ERR, "[WAF] Body: ", body)
 
     -- Bỏ qua kiểm tra cho các endpoint an toàn
     local whitelist = {
-        ["/auth/login"] = true,
-        ["/auth/refresh"] = true,
-        ["/auth/signup"] = true
+        -- ["/auth/login"] = true,
+        -- ["/auth/refresh"] = true,
+        -- ["/auth/signup"] = true
     }
     if whitelist[uri] then return end
 

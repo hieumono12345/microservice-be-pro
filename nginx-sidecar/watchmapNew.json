@@ -1,0 +1,12 @@
+[
+  {
+    "key": "nginx/nginx.conf",
+    "output": "/dynamic/nginx.conf",
+    "reload": "docker kill -s HUP nginx-waf"
+  },
+  {
+    "key": "nginx/lua/waf.lua",
+    "output": "/lua-scripts/waf.lua",
+    "reload": "docker kill -s HUP nginx-waf"
+  }
+]

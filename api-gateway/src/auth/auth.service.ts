@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { VaultService } from 'src/vault/vault.service';
+import { EncryptService } from 'src/encrypt/encrypt.service';
 
 @Injectable()
 export class AuthService {
@@ -14,7 +15,8 @@ export class AuthService {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientKafka,
     private readonly configService: ConfigService,
-    private readonly vaultService:  VaultService
+    private readonly vaultService:  VaultService,
+    private readonly encryptService: EncryptService, // Assuming EncryptService is defined elsewhere
   ) {}
 
   private async encrypt(data: any): Promise<string> {
@@ -60,12 +62,13 @@ export class AuthService {
     } catch (error) {
       this.logger.error(`Failed to connect to Kafka: ${error.message}`);
       throw new Error(`Kafka connection failed: ${error.message}`);
-    }
+    }  
   }
 
   async register(registerDto: RegisterDto) {
     try {
-      const encryptedData = await this.encrypt(registerDto);
+      // const encryptedData = await this.encrypt(registerDto);
+      const encryptedData = await this.encryptService.encrypt(registerDto);
       this.logger.log(`Sending register request to Kafka: ${encryptedData}`);
       const response = await firstValueFrom(
         this.authClient.send('auth.register', encryptedData),
@@ -87,7 +90,8 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     try {
-      const encryptedData = await this.encrypt(loginDto);
+      // const encryptedData = await this.encrypt(loginDto);
+      const encryptedData = await this.encryptService.Encrypt(loginDto);
       this.logger.log(`Sending login request to Kafka: ${encryptedData}`);
       const response = await firstValueFrom(
         this.authClient.send('auth.login', encryptedData),
@@ -252,5 +256,4 @@ export class AuthService {
       throw new HttpException(error.message, 500);
     }
   }
-
 }
