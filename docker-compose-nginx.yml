@@ -9,23 +9,23 @@ services:
       - ./nginx-waf/lua:/usr/local/openresty/nginx/lua:ro
       - ./certs/nginx:/etc/nginx/certs:ro
       - ./nginx-waf/logs:/var/log/nginx
-      - nginx-dynamic:/usr/local/openresty/nginx/conf
-      # - ./nginx-waf/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
+      # - nginx-dynamic:/usr/local/openresty/nginx/conf
+      - ./nginx-waf/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
     networks:
       - pro_microservice-network
     command: ["/usr/local/openresty/bin/openresty", "-g", "daemon off;"]
 
-  nginx-sidecar:
-    image: alpine:latest
-    container_name: nginx-sidecar
-    # ❌ KHÔNG CÓ depends_on nữa, vì consul không nằm trong cùng file
-    volumes:
-      - ./nginx-sidecar:/sidecar:ro
-      - nginx-dynamic:/dynamic
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - pro_microservice-network
-    command: ["/bin/sh", "/sidecar/entrypoint.sh"]
+  # nginx-sidecar:
+  #   image: alpine:latest
+  #   container_name: nginx-sidecar
+  #   # ❌ KHÔNG CÓ depends_on nữa, vì consul không nằm trong cùng file
+  #   volumes:
+  #     - ./nginx-sidecar:/sidecar:ro
+  #     - nginx-dynamic:/dynamic
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   networks:
+  #     - pro_microservice-network
+  #   command: ["/bin/sh", "/sidecar/entrypoint.sh"]
 
 volumes:
   nginx-dynamic:

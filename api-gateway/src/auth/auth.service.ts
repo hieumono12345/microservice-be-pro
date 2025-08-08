@@ -68,7 +68,7 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     try {
       // const encryptedData = await this.encrypt(registerDto);
-      const encryptedData = await this.encryptService.encrypt(registerDto);
+      const encryptedData = await this.encryptService.Encrypt(registerDto);
       this.logger.log(`Sending register request to Kafka: ${encryptedData}`);
       const response = await firstValueFrom(
         this.authClient.send('auth.register', encryptedData),

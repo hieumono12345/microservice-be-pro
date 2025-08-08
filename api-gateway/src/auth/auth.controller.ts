@@ -89,12 +89,12 @@ export class AuthController {
 
   @Post('login')
   async login(@Body(ValidationPipe) loginDto: LoginDto, @Req() req: Request) {
-    // Logger.log('Login request received', loginDto.username);
-    // // Ghi đè IP và User-Agent vào loginDto
-    // loginDto.ipAddress = req.ip;
-    // loginDto.userAgent = req.headers['user-agent'] || 'unknown';
-    // return this.authService.login(loginDto);
-    return "oke";
+    Logger.log('Login request received', loginDto.username);
+    // Ghi đè IP và User-Agent vào loginDto
+    loginDto.ipAddress = req.ip;
+    loginDto.userAgent = req.headers['user-agent'] || 'unknown';
+    return this.authService.login(loginDto);
+    // return "oke";
   }
 
   @Post('logout')

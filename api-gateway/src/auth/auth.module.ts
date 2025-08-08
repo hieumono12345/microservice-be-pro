@@ -5,11 +5,13 @@ import { AuthService } from './auth.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { VaultModule } from 'src/vault/vault.module';
 import { EncryptModule } from 'src/encrypt/encrypt.module';
+import { JwtModule } from 'src/jwt/jwt.module';
 
 @Module({
   imports: [
     VaultModule,
     EncryptModule,
+    JwtModule,
     ClientsModule.register([
       {
         name: 'AUTH_SERVICE',

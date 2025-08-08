@@ -16,6 +16,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { EmailOtpService } from './email-otp.service';
 import * as fs from 'fs';
 import * as path from 'path';
+import { log } from 'console';
 
 
 @Injectable()
@@ -227,6 +228,7 @@ export class AuthService {
 
   //   return { message: 'Email verified successfully' };
   // }
+
   async verifyEmail(token: string): Promise<string> {
     const user = await this.userRepository.findOne({
       where: { emailVerificationToken: token },
@@ -451,7 +453,7 @@ export class AuthService {
       sub: user.id,
       userId: user.id,
       username: user.username,
-      role: 'user', // lấy role sau
+      role: 'admin', // lấy role sau
     });
 
     // 5. tạo refresh token

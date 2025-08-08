@@ -1,17 +1,21 @@
 /* eslint-disable */
-import { Controller, Post, Body, Logger, Get, Put, Delete } from '@nestjs/common';
+import { Controller, Post, Body, Logger, Get, Put, Delete, UseGuards, Req } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto';
+import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
+import { RoleGuard } from '../jwt/role.guard';
 
 @Controller('categories')
+@UseGuards(JwtAuthGuard)
 export class CategoriesController {
   private readonly logger = new Logger(CategoriesController.name);
 
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Post()
-  async create(@Body() createCategoryDto: CreateCategoryDto) {
-    this.logger.log('Creating category...');
+  @UseGuards(new RoleGuard('admin'))
+  async create(@Body() createCategoryDto: CreateCategoryDto, @Req() request) {
+    this.logger.log('Creating category... by ', request.user.username);
     return this.categoriesService.createCategories(createCategoryDto);
   }
 
