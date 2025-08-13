@@ -3,9 +3,13 @@ import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ProductService } from './product.service';
 import { ProductController } from './product.controller';
+import { EncryptModule } from 'src/encrypt/encrypt.module';
+import { JwtModule } from 'src/jwt/jwt.module';
 
 @Module({
   imports: [
+    EncryptModule,
+    JwtModule,
     ClientsModule.register([
       {
         name: 'PRODUCT_SERVICE',

@@ -41,6 +41,18 @@ export class User {
   @Column({ type: 'datetime', nullable: true })
   resetPasswordTokenExpiresAt?: Date | null;
 
+  @Column({ type: 'varchar', length: 255})
+  name: string;
+
+  @Column({ type: 'varchar', length: 20})
+  phoneNumber: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  address?: string;
+
+  @Column({ type: 'varchar', length: 50, default: 'user' })
+  role: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

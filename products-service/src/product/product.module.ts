@@ -5,11 +5,14 @@ import { ProductService } from './product.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from './entities/products.entity';
 import { VaultModule } from 'src/vault/vault.module';
+import { Category } from './entities/category.entity';
+import { EncryptModule } from 'src/encrypt/encrypt.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Product]),
+    TypeOrmModule.forFeature([Product, Category]),
     VaultModule,
+    EncryptModule
   ],
   controllers: [ProductController],
   providers: [ProductService],

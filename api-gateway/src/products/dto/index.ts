@@ -1,53 +1,74 @@
-/* eslint-disable prettier/prettier */
-import { IsString, IsNotEmpty,IsNumber  } from 'class-validator';
+/* eslint-disable */
+import { IsString, IsNotEmpty, IsNumber, IsPositive, IsOptional, IsBoolean, IsInt, Min } from 'class-validator';
 
-// dto/create-product.dto.ts
 export class CreateProductDto {
   @IsString()
   @IsNotEmpty()
   name: string;
 
   @IsString()
+  @IsOptional()
   description?: string;
 
-  @IsNotEmpty()
   @IsNumber()
+  @IsPositive()
   price: number;
 
-  @IsNotEmpty()
-  @IsNumber()
+  @IsInt()
+  @Min(0)
   stock: number;
 
   @IsString()
+  @IsOptional()
   imageUrl?: string;
 
-  @IsNotEmpty()
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+
   @IsString()
-  categoryId: string;
+  @IsOptional()
+  categoryId?: string; // ID của category nếu có
 }
 
-// dto/update-product.dto.ts
 export class UpdateProductDto {
   @IsString()
   @IsNotEmpty()
   id: string;
 
   @IsString()
-  @IsNotEmpty()
-  name: string;
+  @IsOptional()
+  name?: string;
 
   @IsString()
+  @IsOptional()
   description?: string;
 
-  @IsString()
-  imageUrl?: string;
-  
   @IsNumber()
+  @IsOptional()
+  @IsPositive()
   price?: number;
 
-  @IsNumber()
+  @IsInt()
+  @IsOptional()
+  @Min(0)
   stock?: number;
 
   @IsString()
-  categoryId?: string;
+  @IsOptional()
+  imageUrl?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+
+  @IsString()
+  @IsOptional()
+  categoryId?: string; // Cập nhật category nếu cần
+}
+
+export class DeleteProductDto {
+  @IsString()
+  @IsNotEmpty()
+  id: string;
 }

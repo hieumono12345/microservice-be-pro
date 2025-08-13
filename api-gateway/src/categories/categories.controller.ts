@@ -5,8 +5,9 @@ import { CreateCategoryDto } from './dto';
 import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 import { RoleGuard } from '../jwt/role.guard';
 
-@Controller('categories')
+
 @UseGuards(JwtAuthGuard)
+@Controller('categories')
 export class CategoriesController {
   private readonly logger = new Logger(CategoriesController.name);
 
@@ -27,15 +28,21 @@ export class CategoriesController {
   }
 
   @Get(':id')
-  getById(@Body('id') id: string) {
+  getById(@Body('id') id: string) {    
+    if (id == undefined || id == "") {
+      this.logger.error(`ID undefined`);
+      return { message: `ID undefined` };
+    }
     this.logger.log(`Fetching category with ID ${id}...`);
-    // Simulate fetching category by ID
-    // return { message: `Category with ID ${id}` };
     return this.categoriesService.getCategoryById(id);
   }
 
   @Put(':id')
   update(@Body('id') id: string, @Body() updateCategoryDto: any) {
+     if (id == undefined || id == "") {
+      this.logger.error(`ID undefined`);
+      return { message: `ID undefined` };
+    }
     this.logger.log(`Updating category with ID ${id}...`);
     // return { message: `Update category with ID ${id}`, data: updateCategoryDto };
     return this.categoriesService.updateCategory(id, updateCategoryDto);
@@ -43,9 +50,11 @@ export class CategoriesController {
 
   @Delete(':id')
   delete(@Body('id') id: string) {
+     if (id == undefined || id == "") {
+      this.logger.error(`ID undefined`);
+      return { message: `ID undefined` };
+    }
     this.logger.log(`Deleting category with ID ${id}...`);
-    // Simulate deleting category by ID
-    // return { message: `Category with ID ${id} deleted` };
     return this.categoriesService.deleteCategory(id);
   }
 }

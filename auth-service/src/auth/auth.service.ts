@@ -60,55 +60,6 @@ export class AuthService {
     }
   }
 
-  // async register(dto: RegisterDto) {
-  //   try {
-  //     const { username, password } = dto;
-  //     const existingUser = await this.userRepository.findOne({ where: { username } });
-  //     if (existingUser) {
-  //       this.logger.warn(`Register failed: Username ${username} already exists`);
-  //       throw new BadRequestException('Username already exists');
-  //     }
-
-  //     const hashedPassword = await bcrypt.hash(password, 10);
-  //     const user = this.userRepository.create({
-  //       username,
-  //       password: hashedPassword,
-  //     });
-  //     await this.userRepository.save(user);
-
-  //     this.logger.log(`User ${username} registered successfully`);
-  //     return { message: 'User registered successfully', statusCode: 200 };
-  //   } catch (error) {
-  //     this.logger.error(`Register error: ${error.message}`);
-  //     throw new BadRequestException(error.message);
-  //   }
-  // }
-
-  // async login(dto: LoginDto) {
-  //   try {
-  //     const { username, password } = dto;
-  //     const user = await this.userRepository.findOne({ where: { username } });
-  //     if (!user) {
-  //       this.logger.warn(`Login failed: Invalid credentials for username ${username}`);
-  //       throw new UnauthorizedException('Invalid credentials');
-  //     }
-
-  //     const isPasswordValid = await bcrypt.compare(password, user.password);
-  //     if (!isPasswordValid) {
-  //       this.logger.warn(`Login failed: Invalid password for username ${username}`);
-  //       throw new UnauthorizedException('Invalid credentials');
-  //     }
-
-  //     const token = this.jwtService.sign({ userId: user.id, username });
-
-  //     this.logger.log(`User ${username} logged in successfully`);
-  //     return { token, statusCode: 200 };
-  //   } catch (error) {
-  //     this.logger.error(`Login error: ${error.message}`);
-  //     throw new UnauthorizedException(error.message);
-  //   }
-  // }
-
   async handleRegister(encryptedData: string) {
     const dto: RegisterDto = await this.decrypt(encryptedData);
     return this.register(dto);
@@ -202,6 +153,9 @@ export class AuthService {
       isEmailVerified: false,
       emailVerificationToken,
       emailVerificationTokenExpiresAt: tokenExpiresAt,
+      name: dto.name,
+      phoneNumber: dto.phoneNumber,
+      address: dto.address
     });
 
     await this.userRepository.save(newUser);
@@ -523,7 +477,7 @@ export class AuthService {
     }
     const user = await this.userRepository.findOne({
       where: { id: decodedAccess.userId },
-      select: [ 'username', 'isEmailVerified', 'createdAt', 'updatedAt'],
+      select: [ 'username', 'isEmailVerified', 'createdAt', 'updatedAt',"name", "phoneNumber", "address" ],
     });
 
     if (!user) {
@@ -536,6 +490,9 @@ export class AuthService {
       username: user.username,
       email: user.username,
       isEmailVerified: user.isEmailVerified,
+      name: user.name,
+      phoneNumber: user.phoneNumber,
+      address: user.address,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
