@@ -407,9 +407,10 @@ export class AuthService {
       sub: user.id,
       userId: user.id,
       username: user.username,
-      role: 'admin', // lấy role sau
+      role: user.role, // lấy role sau
     });
 
+  
     // 5. tạo refresh token
     const sessionId = uuidv4();
     const refreshToken = this.jwtService.signRefreshToken({

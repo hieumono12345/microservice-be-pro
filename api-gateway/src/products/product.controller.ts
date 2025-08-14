@@ -4,8 +4,9 @@ import { ProductService } from './product.service';
 import { CreateProductDto, UpdateProductDto, DeleteProductDto } from './dto';
 import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 import { RoleGuard } from '../jwt/role.guard';
+import { RolesGuard } from '../jwt/roles.guard';
 
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 @Controller('products')
 export class ProductController {
   private readonly logger = new Logger(ProductController.name);
@@ -13,7 +14,7 @@ export class ProductController {
 
   // thiếu DTO
   @Post()
-  @UseGuards(new RoleGuard('admin'))
+  @UseGuards(JwtAuthGuard, new RoleGuard('admin'))
   create(@Body() createProduct: CreateProductDto) {
     return this.productService.createProduct(createProduct);
   }
@@ -37,6 +38,7 @@ export class ProductController {
 
   // Update product by ID
   @Put(':id')
+  @UseGuards(JwtAuthGuard, new RolesGuard(['admin']))
   update(@Body('id') id: string, @Body() updateProduct: UpdateProductDto) {
     if (id == undefined || id == "") {
       this.logger.error(`ID undefined`);
@@ -48,6 +50,7 @@ export class ProductController {
 
   // Delete product by ID
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, new RoleGuard('admin'))
   delete(@Body('id') id: DeleteProductDto) {
     this.logger.log(`Deleting product with ID ${id}...`);
     return this.productService.deleteProduct(id);

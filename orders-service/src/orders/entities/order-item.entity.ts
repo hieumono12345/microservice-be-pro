@@ -3,28 +3,26 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  JoinColumn,
 } from 'typeorm';
 import { Order } from './order.entity';
 
-@Entity({ name: 'order_items' })
+@Entity('order_items')
 export class OrderItem {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ type: 'uuid' })
-  orderId: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @ManyToOne(() => Order, (order) => order.items, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'orderId' })
   order: Order;
 
   @Column({ type: 'uuid' })
-  productId: string; // Kafka gửi từ Product Service
+  productId: string; // FK từ product-service
 
-  @Column({ type: 'int', nullable: false })
+  @Column()
+  productName: string; // snapshot tên sản phẩm
+
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  price: number; // snapshot giá tại thời điểm mua
+
+  @Column()
   quantity: number;
-
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: false })
-  price: number; // snapshot giá tại thời điểm đặt hàng
 }

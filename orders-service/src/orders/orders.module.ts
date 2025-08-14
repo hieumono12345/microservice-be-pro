@@ -5,11 +5,12 @@ import { OrderService } from './orders.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
+import { OrderStatusHistory } from './entities/order-status-history.entity';
 import { VaultModule } from 'src/vault/vault.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, OrderItem]),
+    TypeOrmModule.forFeature([Order, OrderItem, OrderStatusHistory]),
     VaultModule,
   ],
   controllers: [OrderController],

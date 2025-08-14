@@ -288,4 +288,6 @@ export class ProductService {
       throw new BadRequestException(`Failed to fetch products by category: ${error.message}`);
     }
   }
+
+
 }

@@ -9,6 +9,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrderModule } from './orders/orders.module';
 import { Order } from './orders/entities/order.entity';
 import { OrderItem } from './orders/entities/order-item.entity';
+import { OrderStatusHistory } from './orders/entities/order-status-history.entity';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -34,7 +35,7 @@ import * as path from 'path';
           username: 'offline_user',
           password: 'offline_password',
           database: 'offline_db',
-          entities: [],
+          entities: [Order, OrderItem, OrderStatusHistory],
           synchronize: configService.get<string>('NODE_ENV', 'development') === 'development',
           ssl: {
             ca: fs.readFileSync(path.join(certsPath, 'ca.crt')),

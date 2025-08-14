@@ -52,6 +52,7 @@ export class CategoriesService {
           updatedAt: savedCategory.updatedAt,
         },
       });
+      
     } catch (error) {
       throw new BadRequestException(`Failed to create category: ${error.message}`);
     }
@@ -205,5 +206,6 @@ export class CategoriesService {
       throw new BadRequestException(`Failed to fetch category: ${error.message}`);
     }
   }
+
 }
 

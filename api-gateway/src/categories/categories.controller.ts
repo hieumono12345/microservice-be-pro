@@ -6,7 +6,7 @@ import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 import { RoleGuard } from '../jwt/role.guard';
 
 
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 @Controller('categories')
 export class CategoriesController {
   private readonly logger = new Logger(CategoriesController.name);
@@ -14,7 +14,8 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Post()
-  @UseGuards(new RoleGuard('admin'))
+  // @UseGuards(new RoleGuard('admin'))
+  @UseGuards(JwtAuthGuard, new RoleGuard('admin'))
   async create(@Body() createCategoryDto: CreateCategoryDto, @Req() request) {
     this.logger.log('Creating category... by ', request.user.username);
     return this.categoriesService.createCategories(createCategoryDto);
@@ -38,6 +39,7 @@ export class CategoriesController {
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard, new RoleGuard('admin'))
   update(@Body('id') id: string, @Body() updateCategoryDto: any) {
      if (id == undefined || id == "") {
       this.logger.error(`ID undefined`);
@@ -49,6 +51,7 @@ export class CategoriesController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, new RoleGuard('admin'))
   delete(@Body('id') id: string) {
      if (id == undefined || id == "") {
       this.logger.error(`ID undefined`);
