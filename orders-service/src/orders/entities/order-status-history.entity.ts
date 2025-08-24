@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 import { Order } from './order.entity';
+import { OrderStatus } from 'src/enums/order-status.enum';
 
 @Entity('order_status_history')
 export class OrderStatusHistory {
@@ -14,9 +15,9 @@ export class OrderStatusHistory {
 
   @ManyToOne(() => Order, (order) => order.statusHistory, { onDelete: 'CASCADE' })
   order: Order;
-
-  @Column()
-  status: string; // pending, confirmed, shipped, delivered, cancelled
+  
+  @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
+  status: OrderStatus;
 
   @Column({ nullable: true })
   note?: string;

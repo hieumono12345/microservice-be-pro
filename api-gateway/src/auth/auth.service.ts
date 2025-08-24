@@ -15,9 +15,9 @@ export class AuthService {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientKafka,
     private readonly configService: ConfigService,
-    private readonly vaultService:  VaultService,
+    private readonly vaultService: VaultService,
     private readonly encryptService: EncryptService, // Assuming EncryptService is defined elsewhere
-  ) {}
+  ) { }
 
   private async encrypt(data: any): Promise<string> {
     try {
@@ -62,7 +62,7 @@ export class AuthService {
     } catch (error) {
       this.logger.error(`Failed to connect to Kafka: ${error.message}`);
       throw new Error(`Kafka connection failed: ${error.message}`);
-    }  
+    }
   }
 
   async register(registerDto: RegisterDto) {
@@ -246,7 +246,7 @@ export class AuthService {
       const response = await firstValueFrom(
         this.authClient.send('auth.forgot-password', email),
       );
-      
+
       if (response.statusCode >= 400) {
         this.logger.warn(`Forgot password failed: ${response.message}`);
         throw new HttpException(response.message, response.statusCode);

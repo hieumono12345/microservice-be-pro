@@ -16,12 +16,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { EmailOtpService } from './email-otp.service';
 import * as fs from 'fs';
 import * as path from 'path';
-import { log } from 'console';
 
 
 @Injectable()
 export class AuthService {
-  
+
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
@@ -35,7 +34,7 @@ export class AuthService {
     private readonly userSessionRepository: Repository<UserSession>,
     @InjectRepository(RevokedToken)
     private readonly revokedTokenRepository: Repository<RevokedToken>,
-  ) {}
+  ) { }
 
   private async decrypt(encryptedData: string): Promise<any> {
     try {
@@ -81,9 +80,9 @@ export class AuthService {
   }
 
   async handleResetPassword(encryptedData: string) {
-    const dto : { token: string; newPassword: string } = await this.decrypt(encryptedData);
+    const dto: { token: string; newPassword: string } = await this.decrypt(encryptedData);
     return this.resetPassword(dto.token, dto.newPassword);
-  }  
+  }
 
   // async register(dto: RegisterDto) {
   //   const { username, password } = dto;
@@ -155,7 +154,8 @@ export class AuthService {
       emailVerificationTokenExpiresAt: tokenExpiresAt,
       name: dto.name,
       phoneNumber: dto.phoneNumber,
-      address: dto.address
+      address: dto.address,
+      // role: 'admin', // hoặc 'user' tùy ý
     });
 
     await this.userRepository.save(newUser);
@@ -163,25 +163,6 @@ export class AuthService {
 
     return { message: 'Tài khoản đã được tạo. Vui lòng kiểm tra email để xác minh.' };
   }
-
-  // async verifyEmail(token: string) {
-  //   const user = await this.userRepository.findOne({ where: { emailVerificationToken: token } });
-  //   if (!user) throw new BadRequestException('Invalid token');
-  //   if (
-  //     !user.emailVerificationTokenExpiresAt ||
-  //     user.emailVerificationTokenExpiresAt < new Date()
-  //   ) {
-  //     throw new BadRequestException('Token expired');
-  //   }
-
-  //   user.isEmailVerified = true;
-  //   user.emailVerificationToken = null;
-  //   user.emailVerificationTokenExpiresAt = null;
-
-  //   await this.userRepository.save(user);
-
-  //   return { message: 'Email verified successfully' };
-  // }
 
   async verifyEmail(token: string): Promise<string> {
     const user = await this.userRepository.findOne({
@@ -212,90 +193,22 @@ export class AuthService {
     return fs.readFileSync(filePath, 'utf8');
   }
 
-  // async login(dto: LoginDto) {
-  //   const { username, password } = dto;
-  //   const user = await this.userRepository.findOne({ where: { username } });
-
-  //   if (!user || !user.password) throw new UnauthorizedException('Invalid credentials');
-  //   if (!user.isEmailVerified) throw new UnauthorizedException('Please verify your email');
-
-  //   const isValid = await bcrypt.compare(password, user.password);
-  //   if (!isValid) throw new UnauthorizedException('Invalid credentials');
-
-  //   const accessToken = this.jwtService.sign({ userId: user.id, username: user.username });
-  //   // const refreshToken = this.jwtService.generateRefreshToken(user.id); // nếu chưa có thì bỏ
-
-  //   return { accessToken };
-  // }
-
-  // async refreshToken(payload: RefreshTokenDto) {
-  // const { refreshToken, acceptToken, ipAddress, userAgent } = payload;
-
-  // const decodedAcceptToken = this.jwtService.verifyAccessToken(acceptToken);
-  // const decodedRefreshToken = this.jwtService.verifyRefreshToken(refreshToken);
-
-  // const session = await this.userSessionRepository.findOne({
-  //   where: { sessionId: decodedRefreshToken.sessionId },
-  //   relations: ['user'],
-  // });
-
-  // if (!session || session.isRevoked) {
-  //   throw new UnauthorizedException('Session is invalid or revoked');
-  // }
-
-  // if (session.ipAddress && session.ipAddress !== ipAddress) {
-  //   // chỗ này gọi hàm verifyEmail chứ không phải throw lỗi 
-  //   throw new UnauthorizedException('IP address mismatch');
-  // }
-
-  // // Thu hồi access token cũ (tùy hệ thống bạn lưu revoked access token hay không)
-  // await this.revokedTokenRepository.save({
-  //   jti: acceptToken,
-  //   userId: decodedAcceptToken.sub,
-  // });
-
-  // // Tạo access token mới
-  // const newAccessToken = this.jwtService.signAccessToken({
-  //   userId: session.user.id,
-  //   username: session.user.username,
-  //   role: 'user',
-  // });
-
-  // return {
-  //   accessToken: newAccessToken,
-  //   refreshToken, // giữ nguyên nếu chưa cần rotate
-  // };
-  // }
-
-  // src/auth/auth.service.ts (auth-service)
-
   async refreshToken(dto: RefreshTokenDto) {
     const { acceptToken, refreshToken, ipAddress, userAgent } = dto;
 
-    
+
     // 1. Giải mã accept token
     const decodedAccess = this.jwtService.verifyAccessToken(acceptToken);
     // if (!decodedAccess || !decodedAccess.userId ) {
     //   throw new UnauthorizedException('Invalid access token');
     // }
-    if(decodedAccess!= null){
+    if (decodedAccess != null) {
       this.logger.log('Access token is still valid, no need to refresh.');
       return {
         accessToken: acceptToken,
         message: 'Access token still valid, no need to refresh.',
       };
     }
-
-    // 2. Nếu access token còn hạn thì không cấp mới
-    // const now = Date.now() / 1000;
-    // if (decodedAccess.exp && decodedAccess.exp > now) {
-    //   this.logger.log('Access token is still valid, no need to refresh.');
-    //   return {
-    //     accessToken: acceptToken,
-    //     message: 'Access token still valid, no need to refresh.',
-    //   };
-    // }
-    
 
     // 3. Kiểm tra access token và refreshToken đã bị thu hồi chưa
     const isRefreshRevoked = await this.revokedTokenRepository.findOne({
@@ -304,7 +217,7 @@ export class AuthService {
         { token: acceptToken },
       ],
     });
-    if (isRefreshRevoked) throw new UnauthorizedException('Refresh token or Accept token revoked ');    
+    if (isRefreshRevoked) throw new UnauthorizedException('Refresh token or Accept token revoked ');
 
     // 4. Giải mã refresh token
     const decodedRefresh = this.jwtService.verifyRefreshToken(refreshToken);
@@ -344,7 +257,7 @@ export class AuthService {
       sub: decodedRefresh.userId,
       userId: decodedRefresh.userId,
       username: decodedRefresh.username,
-      role: decodedRefresh.role, 
+      role: decodedRefresh.role,
     });
 
     return {
@@ -373,7 +286,7 @@ export class AuthService {
     }
 
     // 3. Kiểm tra mật khẩu
-    
+
     const isMatch = await bcrypt.compare(password, user?.password);
 
     if (!isMatch) {
@@ -397,11 +310,11 @@ export class AuthService {
 
     // Nếu mật khẩu đúng, reset số lần đăng nhập sai
     if (user.failedLoginAttempts > 0) {
-      user.failedLoginAttempts = 0;      
+      user.failedLoginAttempts = 0;
       user.loginLockedUntil = null; // Reset khóa nếu có
       await this.userRepository.save(user);
     }
-    
+
     // 4. tạo access token
     const acceptToken = this.jwtService.signAccessToken({
       sub: user.id,
@@ -410,7 +323,7 @@ export class AuthService {
       role: user.role, // lấy role sau
     });
 
-  
+
     // 5. tạo refresh token
     const sessionId = uuidv4();
     const refreshToken = this.jwtService.signRefreshToken({
@@ -467,7 +380,7 @@ export class AuthService {
     return { message: 'Logout successful' };
   }
 
-  async me(acceptToken: string){
+  async me(acceptToken: string) {
     // 1. Lấy thông tin người dùng từ token
     const decodedAccess = this.jwtService.verifyAccessToken(acceptToken);
     if (!decodedAccess) {
@@ -478,7 +391,7 @@ export class AuthService {
     }
     const user = await this.userRepository.findOne({
       where: { id: decodedAccess.userId },
-      select: [ 'username', 'isEmailVerified', 'createdAt', 'updatedAt',"name", "phoneNumber", "address" ],
+      select: ['username', 'isEmailVerified', 'createdAt', 'updatedAt', "name", "phoneNumber", "address"],
     });
 
     if (!user) {
@@ -521,7 +434,7 @@ export class AuthService {
       this.logger.debug(`User ${user.username} already has a valid reset password token`);
       throw new BadRequestException('A password reset request is already in progress. Please check your email.');
     }
-  
+
 
     // Tạo token đặt lại mật khẩu
     const resetToken = uuidv4();

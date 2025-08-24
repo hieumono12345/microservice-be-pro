@@ -5,9 +5,13 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 // import { ProductController } from './product.controller';
 import { OrderService } from './orders.service';
 import { OrderController } from './orders.controller';
+import { EncryptModule } from 'src/encrypt/encrypt.module';
+import { JwtModule } from 'src/jwt/jwt.module';
 
 @Module({
   imports: [
+    EncryptModule,
+    JwtModule,
     ClientsModule.register([
       {
         name: 'ORDER_SERVICE',

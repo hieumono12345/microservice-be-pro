@@ -10,7 +10,6 @@ import { VaultModule } from 'src/vault/vault.module';
 import { EmailOtpService } from './email-otp.service';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { join } from 'path';
 import { UserSession } from './entities/user-session.entity';
@@ -19,10 +18,8 @@ import { RevokedToken } from './entities/revoked-token.entity';
 @Module({
   imports: [
     ConfigModule,
-
     TypeOrmModule.forFeature([User, EmailOtpCode, UserSession, RevokedToken]),
     VaultModule,
-
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

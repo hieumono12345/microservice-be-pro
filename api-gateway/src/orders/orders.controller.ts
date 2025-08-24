@@ -1,41 +1,59 @@
 /* eslint-disable */
-import { Controller, Post, Body, Logger, Get, Put, Delete } from '@nestjs/common';
+import { Controller, Post, Body, Logger, Get, Put, Delete, Query, Param, Patch, UseGuards, Req, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { OrderService } from './orders.service';
-
+import { CreateOrderDto, UpdateOrderStatusDto, CreateOrderDtoRequest } from './dto';
+import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
+import { RoleGuard } from '../jwt/role.guard';
+import { RolesGuard } from '../jwt/roles.guard';
+import { OrderStatus } from '../enums/order-status.enum';
 @Controller('orders')
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  private readonly logger = new Logger(OrderController.name);
 
-  // thiếu DTO
+  constructor(private readonly ordersService: OrderService) { }
+
   @Post()
-  create(@Body() data: any) {
-    return this.orderService.createOrder(data);
+  @UseGuards(JwtAuthGuard, new RoleGuard('user'))
+  async create(@Body() dto: CreateOrderDtoRequest, @Req() req) {
+    return this.ordersService.createOrder(dto, req.user.userId);
+    return 'oke';
   }
 
-  // Get all products
   @Get()
-  getAll() {
-    // Giả lập lấy danh sách sản phẩm
-    return { message: 'List of products' };
+  @UseGuards(JwtAuthGuard, new RolesGuard(['admin']))
+  async getAllOrders() {
+    return this.ordersService.getAllOrders();
   }
 
-  // Get product by ID
+  @Get('my')
+  @UseGuards(JwtAuthGuard, new RolesGuard(['user']))
+  async getAllOrdersByUser(@Req() req) {
+    return this.ordersService.getAllOrdersByUserId(req.user.userId);
+  }
+
   @Get(':id')
-  getById(@Body('id') id: string) {
-    // Giả lập lấy sản phẩm theo ID
-    return { message: `Product with ID ${id}` };
+  @UseGuards(JwtAuthGuard, new RolesGuard(['user']))
+  async getOrderDetail(@Param('id') id: string, @Req() req) {
+    const order = await this.ordersService.getOrderById(id, req.user.userId);
+    if (!order) throw new NotFoundException('Order not found');
+    return order;
   }
 
-  // Update product by ID
-  @Put(':id')
-  update(@Body('id') id: string, @Body() data: any) {
-    return { message: `Update product with ID ${id}`, data };
+  // --- ADMIN UPDATE ---
+  @Patch(':id/admin-status')
+  @UseGuards(JwtAuthGuard, new RolesGuard(['admin']))
+  async updateStatusAdmin(@Param('id') id: string, @Body('status') status: OrderStatus) {
+    return this.ordersService.updateStatusAdmin(id, status);
   }
 
-  // Delete product by ID
-  @Delete(':id')
-  delete(@Body('id') id: string) {
-    // Giả lập xóa sản phẩm theo ID
-    return { message: `Product with ID ${id} deleted` };
+  // --- USER UPDATE ---
+  @Patch(':id/user-status')
+  @UseGuards(JwtAuthGuard, new RolesGuard(['user']))
+  async updateStatusUser(
+    @Param('id') id: string,
+    @Body('status') status: OrderStatus,
+    @Req() req,
+  ) {
+    return this.ordersService.updateStatusUser(id, req.user.userId, status);
   }
 }

@@ -36,6 +36,7 @@ import * as path from 'path';
           password: 'offline_password',
           database: 'offline_db',
           entities: [Order, OrderItem, OrderStatusHistory],
+          autoLoadEntities: true,
           synchronize: configService.get<string>('NODE_ENV', 'development') === 'development',
           ssl: {
             ca: fs.readFileSync(path.join(certsPath, 'ca.crt')),
@@ -47,7 +48,6 @@ import * as path from 'path';
       inject: [ConfigService],
     }),
     OrderModule,
-    // CategoriesModule, // Assuming CategoryModule is defined and imported correctly
   ],
 })
-export class AppModule {}
+export class AppModule { }

@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { OrderItem } from './order-item.entity';
 import { OrderStatusHistory } from './order-status-history.entity';
+import { OrderStatus } from 'src/enums/order-status.enum';
 
 @Entity('orders')
 export class Order {
@@ -20,17 +21,18 @@ export class Order {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   totalPrice: number;
 
-  @Column({ default: 'pending' })
-  status: string; // pending, confirmed, shipped, delivered, cancelled
+
+  @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
+  status: OrderStatus;
 
   // Thông tin người nhận
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'nvarchar', length: 100 })
   receiverName: string;
 
   @Column({ type: 'varchar', length: 15 })
   receiverPhoneNumber: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'nvarchar', length: 255 })
   receiverAddress: string;
 
   @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
