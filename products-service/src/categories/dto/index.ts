@@ -1,5 +1,6 @@
 /* eslint-disable */
-import { IsString, IsNotEmpty } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsString, IsNotEmpty, IsInt } from 'class-validator';
 
 // dto/create-category.dto.ts
 export class CreateCategoryDto {
@@ -29,4 +30,22 @@ export class DeleteCategoryDto {
   @IsString()
   @IsNotEmpty()
   id: string;
+}
+
+export class GetAllDto {
+  @IsInt()
+  @Transform(({ value }) => value || 1)
+  page: number = 1;
+
+  @IsInt()
+  @Transform(({ value }) => value || 100)
+  pageSize: number = 100;
+
+  @IsString()
+  @Transform(({ value }) => value || '')
+  filterName: string = '';
+
+  @IsString()
+  @Transform(({ value }) => value || 'desc')
+  sortBy: string = 'desc';
 }

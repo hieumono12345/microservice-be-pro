@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, MinLength } from 'class-validator';
+import { IsString, IsNotEmpty, MinLength, IsOptional } from 'class-validator';
 
 export class RegisterDto {
   @IsString()
@@ -20,7 +20,12 @@ export class LoginDto {
   @IsNotEmpty()
   password: string;
 
+  @IsOptional()
+  @IsString()
   ipAddress?: string;
+  
+  @IsOptional()
+  @IsString()
   userAgent?: string;
 }
 
@@ -33,7 +38,12 @@ export class RefreshTokenDto {
   @IsNotEmpty()
   acceptToken: string;
 
+  @IsOptional()
+  @IsString()
   ipAddress?: string;
+  
+  @IsOptional()
+  @IsString()
   userAgent?: string;
 }
 
@@ -46,7 +56,12 @@ export class LogoutDto {
   @IsNotEmpty()
   acceptToken: string;
 
+  @IsOptional()
+  @IsString()
   ipAddress?: string;
+  
+  @IsOptional()
+  @IsString()
   userAgent?: string;
 }
 

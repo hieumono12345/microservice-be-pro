@@ -1,9 +1,8 @@
-/* eslint-disable */
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Category } from '../product/entities/category.entity';
-import { CreateCategoryDto, UpdateCategoryDto, DeleteCategoryDto } from './dto';
+import { CreateCategoryDto, UpdateCategoryDto, DeleteCategoryDto, GetAllDto } from './dto';
 import { EncryptService } from 'src/encrypt/encrypt.service';
 
 @Injectable()
@@ -12,7 +11,7 @@ export class CategoriesService {
     @InjectRepository(Category)
     private readonly categoriesRepository: Repository<Category>,
     private readonly encryptService: EncryptService,
-  ) {}
+  ) { }
 
   async create(encryptData: any): Promise<any> {
     try {
@@ -35,7 +34,6 @@ export class CategoriesService {
       // Tạo mới danh mục
       const category = this.categoriesRepository.create({
         name: dto.name,
-        description: dto.description,
       });
 
       // Lưu vào database
@@ -47,12 +45,11 @@ export class CategoriesService {
         data: {
           id: savedCategory.id,
           name: savedCategory.name,
-          description: savedCategory.description,
           createdAt: savedCategory.createdAt,
           updatedAt: savedCategory.updatedAt,
         },
       });
-      
+
     } catch (error) {
       throw new BadRequestException(`Failed to create category: ${error.message}`);
     }
@@ -63,35 +60,22 @@ export class CategoriesService {
       // Giải mã dữ liệu
       const dto: UpdateCategoryDto = await this.encryptService.Decrypt(encryptData);
 
-      // Kiểm tra DTO
+      // Kiểm tra DTO (class-validator sẽ tự động validate, nhưng thêm kiểm tra dự phòng)
       if (!dto.id || !dto.name) {
-        throw new BadRequestException('Category ID and name are required');
+        throw new BadRequestException('Category id and name are required');
       }
 
-      // Tìm danh mục theo ID
-      const category = await this.categoriesRepository.findOne({
-        where: { id: dto.id },
-      });
+      // Tìm danh mục theo id
+      const category = await this.categoriesRepository.findOne({ where: { id: dto.id } });
       if (!category) {
-        throw new NotFoundException(`Category with ID ${dto.id} not found`);
-      }
-
-      // Kiểm tra tên danh mục nếu thay đổi
-      if (dto.name !== category.name) {
-        const existingCategory = await this.categoriesRepository.findOne({
-          where: { name: dto.name },
-        });
-        if (existingCategory) {
-          throw new BadRequestException('Category with this name already exists');
-        }
+        throw new NotFoundException('Category not found');
       }
 
       // Cập nhật thông tin danh mục
-      const updatedCategory = await this.categoriesRepository.save({
-        ...category,
-        name: dto.name,
-        description: dto.description || category.description,
-      });
+      category.name = dto.name;
+
+      // Lưu vào database
+      const updatedCategory = await this.categoriesRepository.save(category);
 
       // Mã hóa dữ liệu trả về
       return this.encryptService.Encrypt({
@@ -99,11 +83,10 @@ export class CategoriesService {
         data: {
           id: updatedCategory.id,
           name: updatedCategory.name,
-          description: updatedCategory.description,
-          createdAt: updatedCategory.createdAt,
           updatedAt: updatedCategory.updatedAt,
         },
       });
+
     } catch (error) {
       throw new BadRequestException(`Failed to update category: ${error.message}`);
     }
@@ -114,98 +97,102 @@ export class CategoriesService {
       // Giải mã dữ liệu
       const dto: DeleteCategoryDto = await this.encryptService.Decrypt(encryptData);
 
-      // Kiểm tra DTO
+      // Kiểm tra DTO (class-validator sẽ tự động validate, nhưng thêm kiểm tra dự phòng)
       if (!dto.id) {
-        throw new BadRequestException('Category ID is required');
+        throw new BadRequestException('Category id is required');
       }
 
-      // Tìm danh mục theo ID, bao gồm quan hệ products
-      const category = await this.categoriesRepository.findOne({
-        where: { id: dto.id },
-        relations: ['products'],
-      });
+      // Tìm danh mục theo id
+      const category = await this.categoriesRepository.findOne({ where: { id: dto.id } });
       if (!category) {
-        throw new NotFoundException(`Category with ID ${dto.id} not found`);
-      }
-
-      // Kiểm tra xem danh mục có sản phẩm liên quan không
-      if (category.products && category.products.length > 0) {
-        throw new BadRequestException(
-          'Cannot delete category with associated products',
-        );
+        throw new NotFoundException('Category not found');
       }
 
       // Xóa danh mục
-      await this.categoriesRepository.delete(dto.id);
+      await this.categoriesRepository.remove(category);
 
       // Mã hóa dữ liệu trả về
       return this.encryptService.Encrypt({
         message: 'Category deleted successfully',
-        id: dto.id,
       });
+
     } catch (error) {
       throw new BadRequestException(`Failed to delete category: ${error.message}`);
     }
   }
 
-  async getAll(): Promise<any> {
+  async getAll(encryptData: any): Promise<any> {
     try {
-      // Lấy tất cả danh mục
-      const categories = await this.categoriesRepository.find({
-        order: { createdAt: 'DESC' },
-        select: ['id', 'name', 'description', 'createdAt', 'updatedAt'],
+      const dto: GetAllDto = await this.encryptService.Decrypt(encryptData);
+
+      // Kiểm tra DTO
+      if (!dto) {
+        throw new BadRequestException('Invalid data');
+      }
+
+      // Lấy danh sách danh mục với phân trang và lọc
+      const [categories, total] = await this.categoriesRepository.findAndCount({
+        skip: (dto.page - 1) * dto.pageSize,
+        take: dto.pageSize,
+        where: {
+          // name: Like(`%${dto.filterName}%`),
+        },
+        order: {
+          createdAt: dto.sortBy === 'asc' ? 'ASC' : 'DESC',
+        },
       });
 
       // Mã hóa dữ liệu trả về
       return this.encryptService.Encrypt({
-        message: 'Fetched all categories successfully',
-        data: categories.map(category => ({
-          id: category.id,
-          name: category.name,
-          description: category.description,
-          createdAt: category.createdAt,
-          updatedAt: category.updatedAt,
-        })),
+        message: 'Categories retrieved successfully',
+        data: categories,
       });
+
     } catch (error) {
-      throw new BadRequestException(`Failed to fetch categories: ${error.message}`);
+      throw new BadRequestException(`Failed to retrieve categories: ${error.message}`);
     }
   }
 
-  async getById(encryptData: any): Promise<any> {
+  async getAllCategory(): Promise<any> {
+    try {
+      const categories = await this.categoriesRepository.find();
+
+      // Mã hóa dữ liệu trả về
+      return this.encryptService.Encrypt({
+        message: 'Categories retrieved successfully',
+        data: categories,
+      });
+
+    } catch (error) {
+      throw new BadRequestException(`Failed to retrieve categories: ${error.message}`);
+    }
+  }
+
+  async getCategory(encryptData: any): Promise<any> {
     try {
       // Giải mã dữ liệu
       const dto: DeleteCategoryDto = await this.encryptService.Decrypt(encryptData);
 
-      // Kiểm tra DTO
+      // Kiểm tra DTO (class-validator sẽ tự động validate, nhưng thêm kiểm tra dự phòng)
       if (!dto.id) {
-        throw new BadRequestException('Category ID is required');
+        throw new BadRequestException('Category id is required');
       }
 
-      // Tìm danh mục theo ID
-      const category = await this.categoriesRepository.findOne({
-        where: { id: dto.id },
-        select: ['id', 'name', 'description', 'createdAt', 'updatedAt'],
-      });
+      // Tìm danh mục theo id
+      const category = await this.categoriesRepository.findOne({ where: { id: dto.id } });
       if (!category) {
-        throw new NotFoundException(`Category with ID ${dto.id} not found`);
+        throw new NotFoundException('Category not found');
       }
 
       // Mã hóa dữ liệu trả về
       return this.encryptService.Encrypt({
-        message: 'Fetched category successfully',
-        data: {
-          id: category.id,
-          name: category.name,
-          description: category.description,
-          createdAt: category.createdAt,
-          updatedAt: category.updatedAt,
-        },
+        message: 'Category retrieved successfully',
+        data: category,
       });
+
     } catch (error) {
-      throw new BadRequestException(`Failed to fetch category: ${error.message}`);
+      throw new BadRequestException(`Failed to retrieve category: ${error.message}`);
     }
   }
 
 }
-

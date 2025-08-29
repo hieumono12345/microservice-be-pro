@@ -1,59 +1,66 @@
 /* eslint-disable */
-import { Controller, Post, Body, Logger, Get, Put, Delete, UseGuards, Req } from '@nestjs/common';
-import { CategoriesService } from './categories.service';
-import { CreateCategoryDto } from './dto';
+import { Controller, Post, Body, Logger, Get, Put, Delete, UseGuards, Req, Param, Query } from '@nestjs/common';
+import { CategoryService } from './categories.service';
+import { CreateCategoryDto, GetAllCategoryDto, UpdateCategoryDto } from './dto';
 import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 import { RoleGuard } from '../jwt/role.guard';
 
 
 // @UseGuards(JwtAuthGuard)
-@Controller('categories')
+@Controller('category')
 export class CategoriesController {
   private readonly logger = new Logger(CategoriesController.name);
+  constructor(private readonly categoriesService: CategoryService) { }
 
-  constructor(private readonly categoriesService: CategoriesService) {}
-
-  @Post()
-  // @UseGuards(new RoleGuard('admin'))
-  @UseGuards(JwtAuthGuard, new RoleGuard('admin'))
-  async create(@Body() createCategoryDto: CreateCategoryDto, @Req() request) {
-    this.logger.log('Creating category... by ', request.user.username);
-    return this.categoriesService.createCategories(createCategoryDto);
+  @Get('get-all')
+  getAll(@Query() getAllCategoryDto: GetAllCategoryDto) {
+    this.logger.log('Fetching all categories ...');
+    // kiểm tra page, pageSize, sortBy, sortOrder
+    return this.categoriesService.getAll(getAllCategoryDto);
   }
 
-  @Get()
-  getAll() {
+  @Get('get-all-category')
+  getAllCategory() {
     this.logger.log('Fetching all categories...');
-    // Simulate fetching all categories
-    return this.categoriesService.getAllCategories();
+    return this.categoriesService.getAllCategory();
   }
 
-  @Get(':id')
-  getById(@Body('id') id: string) {    
+  @Get('get-category/:id')
+  getById(@Param('id') id: string) {
     if (id == undefined || id == "") {
       this.logger.error(`ID undefined`);
       return { message: `ID undefined` };
     }
     this.logger.log(`Fetching category with ID ${id}...`);
-    return this.categoriesService.getCategoryById(id);
+    return this.categoriesService.getCategory(id);
   }
 
-  @Put(':id')
+  @Post('create-category')
   @UseGuards(JwtAuthGuard, new RoleGuard('admin'))
-  update(@Body('id') id: string, @Body() updateCategoryDto: any) {
-     if (id == undefined || id == "") {
+  async create(@Body() createCategoryDto: CreateCategoryDto, @Req() request) {
+    this.logger.log('Creating category... by ', request.user.username);
+    return this.categoriesService.createCategory(createCategoryDto);
+  }
+
+  @Put('update-category/:id')
+  @UseGuards(JwtAuthGuard, new RoleGuard('admin'))
+  update(@Param('id') id: string, @Body() UpdateCategoryDto: any) {
+    if (id == undefined || id == "") {
       this.logger.error(`ID undefined`);
       return { message: `ID undefined` };
     }
     this.logger.log(`Updating category with ID ${id}...`);
-    // return { message: `Update category with ID ${id}`, data: updateCategoryDto };
-    return this.categoriesService.updateCategory(id, updateCategoryDto);
+    this.logger.log(`UpdateCategoryDto: ${JSON.stringify(UpdateCategoryDto)}`);
+    // UpdateCategoryDto.id = id;
+    return { message: `Update category with ID ${id}`, data: UpdateCategoryDto };
+    // return this.categoriesService.updateCategory(UpdateCategoryDto);
+
   }
 
-  @Delete(':id')
+  @Delete('delete-category/:id')
   @UseGuards(JwtAuthGuard, new RoleGuard('admin'))
-  delete(@Body('id') id: string) {
-     if (id == undefined || id == "") {
+  delete(@Param('id') id: string) {
+    if (id == undefined || id == "") {
       this.logger.error(`ID undefined`);
       return { message: `ID undefined` };
     }

@@ -14,18 +14,15 @@ export class Category {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ length: 100 })
+  @Column({ type: 'varchar', length: 100, unique: true, collation: 'utf8mb4_unicode_ci' })
   name: string;
-
-  @Column({ type: 'text', nullable: true })
-  description?: string;
 
   @OneToMany(() => Product, (product) => product.category)
   products: Product[];
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }

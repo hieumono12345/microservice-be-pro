@@ -202,6 +202,8 @@ export class AuthService {
     // if (!decodedAccess || !decodedAccess.userId ) {
     //   throw new UnauthorizedException('Invalid access token');
     // }
+
+
     if (decodedAccess != null) {
       this.logger.log('Access token is still valid, no need to refresh.');
       return {
@@ -218,6 +220,9 @@ export class AuthService {
       ],
     });
     if (isRefreshRevoked) throw new UnauthorizedException('Refresh token or Accept token revoked ');
+
+    // Thêm access token vào danh sách thu hồi
+    // await this.revokedTokenRepository.save({ token: acceptToken });
 
     // 4. Giải mã refresh token
     const decodedRefresh = this.jwtService.verifyRefreshToken(refreshToken);
@@ -253,6 +258,7 @@ export class AuthService {
     // await this.revokedTokenRepository.save({ token: acceptToken });
 
     // 8. Cấp access token mới
+    this.logger.debug(`Decoded refresh token: ${JSON.stringify(decodedRefresh)}`);
     const newAccessToken = this.jwtService.signAccessToken({
       sub: decodedRefresh.userId,
       userId: decodedRefresh.userId,
@@ -331,7 +337,7 @@ export class AuthService {
       sub: user.id,
       userId: user.id,
       username: user.username,
-      role: 'user', // lấy role sau
+      role: user.role, // lấy role sau
     });
 
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 ngày

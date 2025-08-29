@@ -6,9 +6,18 @@ import * as https from 'https';
 import * as path from 'path';
 import { VaultService } from './vault/vault.service';
 import * as cookieParser from 'cookie-parser';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Setup global validation pipe
+  app.useGlobalPipes(new ValidationPipe({
+    transform: true,
+    whitelist: true,
+    forbidNonWhitelisted: true,
+  }));
+
   const vaultService = app.get(VaultService);
   await vaultService.onModuleInit(); // Login
   app.use(cookieParser());
@@ -29,7 +38,7 @@ async function bootstrap() {
     server.listen(3443);
     console.log('API Gateway is running on HTTPS port 3443');
   });
-  
+
 }
 bootstrap();
 

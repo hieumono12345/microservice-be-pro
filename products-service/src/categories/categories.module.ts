@@ -16,4 +16,4 @@ import { EncryptModule } from 'src/encrypt/encrypt.module'; // Assuming EncryptM
   controllers: [CategoriesController],
   providers: [CategoriesService],
 })
-export class CategoriesModule {}
+export class CategoriesModule { }

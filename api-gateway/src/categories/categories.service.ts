@@ -2,26 +2,27 @@
 import { Inject, Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { CreateCategoryDto, UpdateCategoryDto } from './dto';
 import { EncryptService } from 'src/encrypt/encrypt.service';
+import { CreateCategoryDto, UpdateCategoryDto, GetAllCategoryDto } from './dto';
 
 @Injectable()
-export class CategoriesService {
-  private readonly logger = new Logger(CategoriesService.name);
+export class CategoryService {
+  private readonly logger = new Logger(CategoryService.name);
 
   constructor(
     @Inject('PRODUCT_SERVICE') private readonly categoriesClient: ClientKafka,
     private readonly encryptService: EncryptService,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     try {
       [
-        'categories.create',
-        'categories.update',
-        'categories.delete',
-        'categories.getAll',
-        'categories.getById',
+        'category.getAll',
+        'category.getAllCategories',
+        'category.getCategory',
+        'category.create',
+        'category.update',
+        'category.delete',
       ].forEach((pattern) => this.categoriesClient.subscribeToResponseOf(pattern));
       await this.categoriesClient.connect();
       this.logger.log('Connected to Kafka successfully');
@@ -31,14 +32,14 @@ export class CategoriesService {
     }
   }
 
-  async createCategories(createCategoryDto: CreateCategoryDto) {
+  async createCategory(createCategoryDto: CreateCategoryDto) {
     this.logger.log('Creating category...');
     try {
       // Mã hóa dữ liệu gửi đi
       const encryptData = await this.encryptService.Encrypt(createCategoryDto);
       // Gửi yêu cầu tới Kafka
       const encryptedResponse = await firstValueFrom(
-        this.categoriesClient.send('categories.create', encryptData),
+        this.categoriesClient.send('category.create', encryptData),
       );
       // Giải mã dữ liệu nhận về
       const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);
@@ -51,21 +52,43 @@ export class CategoriesService {
       this.logger.error(`Failed to create category: ${error.message}`);
       throw new BadRequestException(`Failed to create category: ${error.message}`);
     }
+
   }
 
-  async getAllCategories() {
-    this.logger.log('Fetching all categories...');
+  async getAll(getAllCategoryDto: GetAllCategoryDto) {
+    this.logger.log('Fetching all categorys...');
+    try {
+      // Mã hóa dữ liệu gửi đi (dữ liệu rỗng)
+      const encryptData = await this.encryptService.Encrypt(getAllCategoryDto);
+      // Gửi yêu cầu tới Kafka
+      const encryptedResponse = await firstValueFrom(
+        this.categoriesClient.send('category.getAll', encryptData),
+      );
+      // Giải mã dữ liệu nhận về
+      const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);
+      // Kiểm tra cấu trúc response
+      if (!decryptedResponse.message || !decryptedResponse.data) {
+        throw new BadRequestException('Invalid response structure from product service');
+      }
+      return decryptedResponse;
+    } catch (error) {
+      this.logger.error(`Failed to fetch categorys: ${error.message}`);
+      throw new BadRequestException(`Failed to fetch categorys: ${error.message}`);
+    }
+  }
+
+  async getAllCategory() {
     try {
       // Mã hóa dữ liệu gửi đi (dữ liệu rỗng)
       const encryptData = await this.encryptService.Encrypt({});
       // Gửi yêu cầu tới Kafka
       const encryptedResponse = await firstValueFrom(
-        this.categoriesClient.send('categories.getAll', encryptData),
+        this.categoriesClient.send('category.getAllCategories', encryptData),
       );
       // Giải mã dữ liệu nhận về
       const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);
       // Kiểm tra cấu trúc response
-      if (!decryptedResponse.message || !Array.isArray(decryptedResponse.data)) {
+      if (!decryptedResponse.message || !decryptedResponse.data) {
         throw new BadRequestException('Invalid response structure from product service');
       }
       return decryptedResponse;
@@ -75,14 +98,14 @@ export class CategoriesService {
     }
   }
 
-  async getCategoryById(id: string) {
+  async getCategory(id: string) {
     this.logger.log(`Fetching category with ID ${id}...`);
     try {
       // Mã hóa dữ liệu gửi đi
       const encryptData = await this.encryptService.Encrypt({ id });
       // Gửi yêu cầu tới Kafka
       const encryptedResponse = await firstValueFrom(
-        this.categoriesClient.send('categories.getById', encryptData),
+        this.categoriesClient.send('category.getCategory', encryptData),
       );
       // Giải mã dữ liệu nhận về
       const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);
@@ -97,14 +120,14 @@ export class CategoriesService {
     }
   }
 
-  async updateCategory(id: string, updateCategoryDto: UpdateCategoryDto) {
-    this.logger.log(`Updating category with ID ${id}...`);
+  async updateCategory(updateCategoryDto: UpdateCategoryDto) {
+    this.logger.log(`Updating category...`);
     try {
       // Mã hóa dữ liệu gửi đi
-      const encryptData = await this.encryptService.Encrypt({ ...updateCategoryDto, id });
+      const encryptData = await this.encryptService.Encrypt(updateCategoryDto);
       // Gửi yêu cầu tới Kafka
       const encryptedResponse = await firstValueFrom(
-        this.categoriesClient.send('categories.update', encryptData),
+        this.categoriesClient.send('category.update', encryptData),
       );
       // Giải mã dữ liệu nhận về
       const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);
@@ -126,12 +149,12 @@ export class CategoriesService {
       const encryptData = await this.encryptService.Encrypt({ id });
       // Gửi yêu cầu tới Kafka
       const encryptedResponse = await firstValueFrom(
-        this.categoriesClient.send('categories.delete', encryptData),
+        this.categoriesClient.send('category.delete', encryptData),
       );
       // Giải mã dữ liệu nhận về
       const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);
-      // Kiểm tra cấu trúc response
-      if (!decryptedResponse.message || !decryptedResponse.id) {
+      // Kiểm tra cấu trúc response - Delete chỉ cần kiểm tra message
+      if (!decryptedResponse.message) {
         throw new BadRequestException('Invalid response structure from product service');
       }
       return decryptedResponse;
@@ -140,4 +163,5 @@ export class CategoriesService {
       throw new BadRequestException(`Failed to delete category: ${error.message}`);
     }
   }
+
 }

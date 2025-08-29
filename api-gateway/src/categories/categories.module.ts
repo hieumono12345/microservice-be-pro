@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { CategoriesService } from './categories.service';
+import { CategoryService } from './categories.service';
 import { CategoriesController } from './categories.controller';
 import { EncryptModule } from 'src/encrypt/encrypt.module';
 import { JwtModule } from 'src/jwt/jwt.module';
@@ -12,7 +12,7 @@ import { JwtModule } from 'src/jwt/jwt.module';
     JwtModule,
     ClientsModule.register([
       {
-        name: 'PRODUCT_SERVICE',  
+        name: 'PRODUCT_SERVICE',
         transport: Transport.KAFKA,
         options: {
           client: {
@@ -32,6 +32,6 @@ import { JwtModule } from 'src/jwt/jwt.module';
     ]),
   ],
   controllers: [CategoriesController],
-  providers: [CategoriesService],
+  providers: [CategoryService],
 })
-export class CategoriesModule {}
+export class CategoriesModule { }
