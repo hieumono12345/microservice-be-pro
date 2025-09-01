@@ -46,6 +46,10 @@ export class GetAllDto {
   filterName: string = '';
 
   @IsString()
-  @Transform(({ value }) => value || 'desc')
-  sortBy: string = 'desc';
+  @Transform(({ value }) => value || 'name')
+  sortBy: string = 'name';
+
+  @IsString()
+  @Transform(({ value }) => value || 'DESC')
+  sortOrder: 'ASC' | 'DESC' = 'DESC';
 }

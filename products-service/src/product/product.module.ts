@@ -7,15 +7,16 @@ import { Product } from './entities/products.entity';
 import { VaultModule } from 'src/vault/vault.module';
 import { Category } from './entities/category.entity';
 import { EncryptModule } from 'src/encrypt/encrypt.module';
+import { Brand } from './entities/brand.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Product, Category]),
+    TypeOrmModule.forFeature([Product, Category, Brand]),
     VaultModule,
     EncryptModule
   ],
   controllers: [ProductController],
   providers: [ProductService],
 })
-export class ProductModule {}
+export class ProductModule { }
 

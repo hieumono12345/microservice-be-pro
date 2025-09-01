@@ -26,7 +26,7 @@ export class DeleteCategoryDto {
   id: string;
 }
 
-export class GetAllCategoryDto {
+export class GetAllDto {
   @IsInt()
   @Transform(({ value }) => value || 1)
   page: number = 1;
@@ -40,6 +40,10 @@ export class GetAllCategoryDto {
   filterName: string = '';
 
   @IsString()
-  @Transform(({ value }) => value || 'desc')
-  sortBy: string = 'desc';
+  @Transform(({ value }) => value || 'name')
+  sortBy: string = 'name';
+
+  @IsString()
+  @Transform(({ value }) => value || 'DESC')
+  sortOrder: 'ASC' | 'DESC' = 'DESC';
 }

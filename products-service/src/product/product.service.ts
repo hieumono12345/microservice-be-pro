@@ -6,6 +6,7 @@ import { Product } from '../product/entities/products.entity';
 import { Category } from '../product/entities/category.entity';
 import { CreateProductDto, UpdateProductDto, DeleteProductDto } from './dto';
 import { EncryptService } from 'src/encrypt/encrypt.service';
+import { Brand } from './entities/brand.entity';
 
 @Injectable()
 export class ProductService {
@@ -14,278 +15,176 @@ export class ProductService {
     private readonly productsRepository: Repository<Product>,
     @InjectRepository(Category)
     private readonly categoriesRepository: Repository<Category>,
+    @InjectRepository(Brand)
+    private readonly brandsRepository: Repository<Brand>,
     private readonly encryptService: EncryptService,
   ) { }
 
   async create(encryptData: any): Promise<any> {
-    // try {
-    //   // Giải mã dữ liệu đầu vào
-    //   const dto: CreateProductDto = await this.encryptService.Decrypt(encryptData);
+    try {
+      // Giải mã dữ liệu
+      const dto: CreateProductDto = await this.encryptService.Decrypt(encryptData);
 
-    //   // Kiểm tra validation thủ công (bổ sung cho class-validator)
-    //   if (!dto.name) {
-    //     throw new BadRequestException('Product name is required');
-    //   }
-    //   if (dto.price <= 0) {
-    //     throw new BadRequestException('Price must be positive');
-    //   }
-    //   if (dto.stock < 0) {
-    //     throw new BadRequestException('Stock cannot be negative');
-    //   }
+      // kiểm tra xem category và brand có tồn tại không
+      const category = await this.categoriesRepository.findOne({ where: { id: dto.category } });
+      if (!category) {
+        throw new NotFoundException('Category not found');
+      }
 
-    //   // Kiểm tra sản phẩm đã tồn tại theo name (tùy chọn, để tránh trùng lặp)
-    //   const existingProduct = await this.productsRepository.findOne({ where: { name: dto.name } });
-    //   if (existingProduct) {
-    //     throw new BadRequestException('Product with this name already exists');
-    //   }
+      const brand = await this.brandsRepository.findOne({ where: { id: dto.brand } });
+      if (!brand) {
+        throw new NotFoundException('Brand not found');
+      }
 
-    //   // Kiểm tra category nếu được cung cấp
-    //   let category: Category | undefined;
-    //   if (dto.categoryId) {
-    //     const foundCategory = await this.categoriesRepository.findOne({ where: { id: dto.categoryId } });
-    //     category = foundCategory || undefined; // Chuyển null thành undefined để khớp với Product entity
-    //     if (!category) {
-    //       throw new NotFoundException(`Category with ID ${dto.categoryId} not found`);
-    //     }
-    //   }
+      // kiểm tra xem sản phẩm đã tồn tại chưa
+      const existingProduct = await this.productsRepository.findOne({
+        where: { name: dto.name },
+      });
+      if (existingProduct) {
+        throw new BadRequestException('Product already exists');
+      }
 
-    //   // Tạo entity Product
-    //   const product = this.productsRepository.create({
-    //     name: dto.name,
-    //     description: dto.description,
-    //     price: dto.price,
-    //     stock: dto.stock,
-    //     imageUrl: dto.imageUrl,
-    //     isActive: dto.isActive !== undefined ? dto.isActive : true,
-    //     category: category,
-    //   });
+      // Tạo mới sản phẩm
+      const product = this.productsRepository.create({
+        name: dto.name,
+        description: dto.description,
+        price: dto.price,
+        stock: dto.stock,
+        category: category,
+        brand: brand,
+      });
 
-    //   // Lưu vào database
-    //   const savedProduct = await this.productsRepository.save(product);
+      // Tiến hành tạo sản phẩm
+      await this.productsRepository.save(product);
 
-    //   // Mã hóa dữ liệu trả về
-    //   return this.encryptService.Encrypt({
-    //     message: 'Product created successfully',
-    //     data: {
-    //       id: savedProduct.id,
-    //       name: savedProduct.name,
-    //       description: savedProduct.description,
-    //       price: savedProduct.price,
-    //       stock: savedProduct.stock,
-    //       imageUrl: savedProduct.imageUrl,
-    //       isActive: savedProduct.isActive,
-    //       categoryId: savedProduct.category ? savedProduct.category.id : null,
-    //       createdAt: savedProduct.createdAt,
-    //       updatedAt: savedProduct.updatedAt,
-    //     },
-    //   });
-    // } catch (error) {
-    //   throw new BadRequestException(`Failed to create product: ${error.message}`);
-    // }
+      // Mã hóa dữ liệu trả về
+      return this.encryptService.Encrypt({
+        status: 'OK',
+        message: 'SUCCESS',
+        data: product,
+      });
+    } catch (error) {
+      throw new BadRequestException('Invalid data');
+    }
   }
 
   async update(encryptData: any): Promise<any> {
-    // try {
-    //   // Giải mã dữ liệu đầu vào
-    //   const dto: UpdateProductDto = await this.encryptService.Decrypt(encryptData);
-
-    //   // Kiểm tra ID bắt buộc
-    //   if (!dto.id) {
-    //     throw new BadRequestException('Product ID is required');
-    //   }
-
-    //   // Tìm sản phẩm theo ID
-    //   const product = await this.productsRepository.findOne({
-    //     where: { id: dto.id },
-    //     relations: ['category'],
-    //   });
-    //   if (!product) {
-    //     throw new NotFoundException(`Product with ID ${dto.id} not found`);
-    //   }
-
-    //   // Kiểm tra category nếu được cập nhật
-    //   let category: Category | undefined = product.category;
-    //   if (dto.categoryId !== undefined) {
-    //     if (dto.categoryId === null) {
-    //       category = undefined; // Xóa liên kết category
-    //     } else {
-    //       const foundCategory = await this.categoriesRepository.findOne({ where: { id: dto.categoryId } });
-    //       category = foundCategory || undefined; // Chuyển null thành undefined
-    //       if (!category) {
-    //         throw new NotFoundException(`Category with ID ${dto.categoryId} not found`);
-    //       }
-    //     }
-    //   }
-
-    //   // Cập nhật các trường
-    //   const updatedProduct = await this.productsRepository.save({
-    //     ...product,
-    //     name: dto.name || product.name,
-    //     description: dto.description !== undefined ? dto.description : product.description,
-    //     price: dto.price || product.price,
-    //     stock: dto.stock !== undefined ? dto.stock : product.stock,
-    //     imageUrl: dto.imageUrl !== undefined ? dto.imageUrl : product.imageUrl,
-    //     isActive: dto.isActive !== undefined ? dto.isActive : product.isActive,
-    //     category: category,
-    //   });
-
-    //   // Mã hóa dữ liệu trả về
-    //   return this.encryptService.Encrypt({
-    //     message: 'Product updated successfully',
-    //     data: {
-    //       id: updatedProduct.id,
-    //       name: updatedProduct.name,
-    //       description: updatedProduct.description,
-    //       price: updatedProduct.price,
-    //       stock: updatedProduct.stock,
-    //       imageUrl: updatedProduct.imageUrl,
-    //       isActive: updatedProduct.isActive,
-    //       categoryId: updatedProduct.category ? updatedProduct.category.id : null,
-    //       createdAt: updatedProduct.createdAt,
-    //       updatedAt: updatedProduct.updatedAt,
-    //     },
-    //   });
-    // } catch (error) {
-    //   throw new BadRequestException(`Failed to update product: ${error.message}`);
-    // }
+    try {
+      // Giải mã dữ liệu
+      const dto: UpdateProductDto = await this.encryptService.Decrypt(encryptData);
+      // Tìm sản phẩm theo id
+      const product = await this.productsRepository.findOne({ where: { id: dto.id } });
+      if (!product) {
+        return this.encryptService.Encrypt({
+          status: 'ERR',
+          message: 'The product is not defined',
+        });
+      }
+      // Cập nhật thông tin sản phẩm
+      if (dto.name) product.name = dto.name;
+      if (dto.description) product.description = dto.description;
+      if (dto.price) product.price = dto.price;
+      await this.productsRepository.save(product);
+      // Mã hóa dữ liệu trả về
+      return this.encryptService.Encrypt({
+        status: 'OK',
+        message: 'SUCCESS',
+        data: product,
+      });
+    } catch (error) {
+      throw new BadRequestException('Invalid data');
+    }
   }
-
+  // Xóa sản phẩm
   async delete(encryptData: any): Promise<any> {
-    // try {
-    //   // Giải mã dữ liệu đầu vào
-    //   const dto: DeleteProductDto = await this.encryptService.Decrypt(encryptData);
-
-    //   // Kiểm tra ID bắt buộc
-    //   if (!dto.id) {
-    //     throw new BadRequestException('Product ID is required');
-    //   }
-
-    //   // Tìm sản phẩm theo ID
-    //   const product = await this.productsRepository.findOne({ where: { id: dto.id } });
-    //   if (!product) {
-    //     throw new NotFoundException(`Product with ID ${dto.id} not found`);
-    //   }
-
-    //   // Xóa sản phẩm
-    //   await this.productsRepository.delete(dto.id);
-
-    //   // Mã hóa dữ liệu trả về
-    //   return this.encryptService.Encrypt({
-    //     message: 'Product deleted successfully',
-    //     id: dto.id,
-    //   });
-    // } catch (error) {
-    //   throw new BadRequestException(`Failed to delete product: ${error.message}`);
-    // }
+    try {
+      // Giải mã dữ liệu
+      const dto: DeleteProductDto = await this.encryptService.Decrypt(encryptData);
+      // Tìm sản phẩm theo id
+      const product = await this.productsRepository.findOne({ where: { id: dto.id } });
+      if (!product) {
+        return this.encryptService.Encrypt({
+          status: 'ERR',
+          message: 'The product is not defined',
+        });
+      }
+      await this.productsRepository.remove(product);
+      return this.encryptService.Encrypt({
+        status: 'OK',
+        message: 'SUCCESS',
+      });
+    } catch (error) {
+      throw new BadRequestException('Invalid data');
+    }
   }
 
-  async getAll(): Promise<any> {
-    // try {
-    //   // Lấy tất cả sản phẩm
-    //   const products = await this.productsRepository.find({
-    //     relations: ['category'],
-    //     order: { createdAt: 'DESC' },
-    //     select: ['id', 'name', 'description', 'price', 'stock', 'imageUrl', 'isActive', 'createdAt', 'updatedAt', 'category'],
-    //   });
+  // Lấy tất cả sản phẩm với phân trang và lọc
+  async getAll(encryptData: any): Promise<any> {
+    try {
+      const dto = await this.encryptService.Decrypt(encryptData);
+      const page = dto.page || 1;
+      const limit = dto.pageSize || 10;
+      const skip = (page - 1) * limit;
+      const orderBy = dto.order || 'name';
 
-    //   // Mã hóa dữ liệu trả về
-    //   return this.encryptService.Encrypt({
-    //     message: 'Fetched all products successfully',
-    //     data: products.map(product => ({
-    //       id: product.id,
-    //       name: product.name,
-    //       description: product.description,
-    //       price: product.price,
-    //       stock: product.stock,
-    //       imageUrl: product.imageUrl,
-    //       isActive: product.isActive,
-    //       categoryId: product.category ? product.category.id : null,
-    //       createdAt: product.createdAt,
-    //       updatedAt: product.updatedAt,
-    //     })),
-    //   });
-    // } catch (error) {
-    //   throw new BadRequestException(`Failed to fetch products: ${error.message}`);
-    // }
+
+
+      const [products, total] = await this.productsRepository.findAndCount({
+        skip,
+        take: limit,
+        where: {
+          ...(dto.category && { category: { id: dto.category } }),
+          ...(dto.brand && { brand: { id: dto.brand } }),
+        },
+      });
+
+      return this.encryptService.Encrypt({
+        status: 'OK',
+        message: 'SUCCESS',
+        data: {
+          products,
+          total,
+          page,
+          last_page: Math.ceil(total / limit),
+        },
+      });
+    } catch (error) {
+      throw new BadRequestException('Invalid data');
+    }
+
+  }
+  // Lấy tất cả sản phẩm không phân trang
+  async getAllProduct(): Promise<any> {
+    try {
+      const products = await this.productsRepository.find();
+      return this.encryptService.Encrypt({
+        status: 'OK',
+        message: 'SUCCESS',
+        data: products,
+      });
+    } catch (error) {
+      throw new BadRequestException('Invalid data');
+    }
   }
 
-  async getById(encryptData: any): Promise<any> {
-    // try {
-    //   // Giải mã dữ liệu đầu vào
-    //   const dto: { id: string } = await this.encryptService.Decrypt(encryptData);
-
-    //   // Kiểm tra ID bắt buộc
-    //   if (!dto.id) {
-    //     throw new BadRequestException('Product ID is required');
-    //   }
-
-    //   // Tìm sản phẩm theo ID
-    //   const product = await this.productsRepository.findOne({
-    //     where: { id: dto.id },
-    //     relations: ['category'],
-    //     select: ['id', 'name', 'description', 'price', 'stock', 'imageUrl', 'isActive', 'createdAt', 'updatedAt', 'category'],
-    //   });
-    //   if (!product) {
-    //     throw new NotFoundException(`Product with ID ${dto.id} not found`);
-    //   }
-
-    //   // Mã hóa dữ liệu trả về
-    //   return this.encryptService.Encrypt({
-    //     message: 'Fetched product successfully',
-    //     data: {
-    //       id: product.id,
-    //       name: product.name,
-    //       description: product.description,
-    //       price: product.price,
-    //       stock: product.stock,
-    //       imageUrl: product.imageUrl,
-    //       isActive: product.isActive,
-    //       categoryId: product.category ? product.category.id : null,
-    //       createdAt: product.createdAt,
-    //       updatedAt: product.updatedAt,
-    //     },
-    //   });
-    // } catch (error) {
-    //   throw new BadRequestException(`Failed to fetch product: ${error.message}`);
-    // }
-  }
-
-  async getByCategory(encryptData: any): Promise<any> {
-    // try {
-    //   // Giải mã dữ liệu đầu vào
-    //   const dto: { categoryId: string } = await this.encryptService.Decrypt(encryptData);
-    //   // Kiểm tra categoryId bắt buộc
-    //   if (!dto.categoryId) {
-    //     throw new BadRequestException('Category ID is required');
-    //   } 
-    //   // Tìm sản phẩm theo categoryId
-    //   const products = await this.productsRepository.find({
-    //     where: { category: { id: dto.categoryId } },
-    //     relations: ['category'],
-    //     order: { createdAt: 'DESC' },
-    //     select: ['id', 'name', 'description', 'price', 'stock', 'imageUrl', 'isActive', 'createdAt', 'updatedAt', 'category'],
-    //   });
-    //   if (products.length === 0) {
-    //     throw new NotFoundException(`No products found for category ID ${dto.categoryId}`);
-    //   }
-    //   // Mã hóa dữ liệu trả về
-    //   return this.encryptService.Encrypt({
-    //     message: 'Fetched products by category successfully',
-    //     data: products.map(product => ({
-    //       id: product.id,
-    //       name: product.name,
-    //       description: product.description,
-    //       price: product.price,
-    //       stock: product.stock,
-    //       imageUrl: product.imageUrl,
-    //       isActive: product.isActive,
-    //       categoryId: product.category ? product.category.id : null,
-    //       createdAt: product.createdAt,
-    //       updatedAt: product.updatedAt,
-    //     })),
-    //   });
-    // } catch (error) {
-    //   throw new BadRequestException(`Failed to fetch products by category: ${error.message}`);
-    // }
+  // Lấy sản phẩm theo id
+  async getProduct(encryptData: any): Promise<any> {
+    try {
+      const dto = await this.encryptService.Decrypt(encryptData);
+      const product = await this.productsRepository.findOne({ where: { id: dto.id } });
+      if (!product) {
+        return this.encryptService.Encrypt({
+          status: 'ERR',
+          message: 'The product is not defined',
+        });
+      }
+      return this.encryptService.Encrypt({
+        status: 'OK',
+        message: 'SUCCESS',
+        data: product,
+      });
+    } catch (error) {
+      throw new BadRequestException('Invalid data');
+    }
   }
 }

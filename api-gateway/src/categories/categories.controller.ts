@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { Controller, Post, Body, Logger, Get, Put, Delete, UseGuards, Req, Param, Query } from '@nestjs/common';
 import { CategoryService } from './categories.service';
-import { CreateCategoryDto, GetAllCategoryDto, UpdateCategoryDto } from './dto';
+import { CreateCategoryDto, GetAllDto, UpdateCategoryDto } from './dto';
 import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 import { RoleGuard } from '../jwt/role.guard';
 
@@ -13,7 +13,7 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoryService) { }
 
   @Get('get-all')
-  getAll(@Query() getAllCategoryDto: GetAllCategoryDto) {
+  getAll(@Query() getAllCategoryDto: GetAllDto) {
     this.logger.log('Fetching all categories ...');
     // kiểm tra page, pageSize, sortBy, sortOrder
     return this.categoriesService.getAll(getAllCategoryDto);
@@ -54,7 +54,6 @@ export class CategoriesController {
     // UpdateCategoryDto.id = id;
     return { message: `Update category with ID ${id}`, data: UpdateCategoryDto };
     // return this.categoriesService.updateCategory(UpdateCategoryDto);
-
   }
 
   @Delete('delete-category/:id')

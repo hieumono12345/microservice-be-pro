@@ -3,6 +3,8 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Order } from './order.entity';
 
@@ -15,14 +17,26 @@ export class OrderItem {
   order: Order;
 
   @Column({ type: 'uuid' })
-  productId: string; // FK từ product-service
+  product: string; // FK từ product-service
 
   @Column()
-  productName: string; // snapshot tên sản phẩm
+  name: string; // snapshot tên sản phẩm
+
+  @Column({ length: 255, nullable: true })
+  image: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   price: number; // snapshot giá tại thời điểm mua
 
-  @Column()
+  @Column({ type: 'int' })
   quantity: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  totalPrice: number; // price * quantity
+
+  @CreateDateColumn({ type: 'datetime' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'datetime' })
+  updatedAt: Date;
 }

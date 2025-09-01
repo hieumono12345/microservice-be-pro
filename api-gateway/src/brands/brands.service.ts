@@ -10,7 +10,7 @@ export class BrandsService {
   private readonly logger = new Logger(BrandsService.name);
 
   constructor(
-    @Inject('PRODUCT_SERVICE') private readonly categoriesClient: ClientKafka,
+    @Inject('PRODUCT_SERVICE') private readonly brandsClient: ClientKafka,
     private readonly encryptService: EncryptService,
   ) { }
 
@@ -23,8 +23,8 @@ export class BrandsService {
         'brand.create',
         'brand.update',
         'brand.delete',
-      ].forEach((pattern) => this.categoriesClient.subscribeToResponseOf(pattern));
-      await this.categoriesClient.connect();
+      ].forEach((pattern) => this.brandsClient.subscribeToResponseOf(pattern));
+      await this.brandsClient.connect();
       this.logger.log('Connected to Kafka successfully');
     } catch (error) {
       this.logger.error(`Failed to connect to Kafka: ${error.message}`);
@@ -39,7 +39,7 @@ export class BrandsService {
       const encryptData = await this.encryptService.Encrypt(createBrandDto);
       // Gửi yêu cầu tới Kafka
       const encryptedResponse = await firstValueFrom(
-        this.categoriesClient.send('brand.create', encryptData),
+        this.brandsClient.send('brand.create', encryptData),
       );
       // Giải mã dữ liệu nhận về
       const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);
@@ -62,7 +62,7 @@ export class BrandsService {
       const encryptData = await this.encryptService.Encrypt(getAllBrandDto);
       // Gửi yêu cầu tới Kafka
       const encryptedResponse = await firstValueFrom(
-        this.categoriesClient.send('brand.getAll', encryptData),
+        this.brandsClient.send('brand.getAll', encryptData),
       );
       // Giải mã dữ liệu nhận về
       const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);
@@ -83,7 +83,7 @@ export class BrandsService {
       const encryptData = await this.encryptService.Encrypt({});
       // Gửi yêu cầu tới Kafka
       const encryptedResponse = await firstValueFrom(
-        this.categoriesClient.send('brand.getAllBrands', encryptData),
+        this.brandsClient.send('brand.getAllBrands', encryptData),
       );
       // Giải mã dữ liệu nhận về
       const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);
@@ -105,7 +105,7 @@ export class BrandsService {
       const encryptData = await this.encryptService.Encrypt({ id });
       // Gửi yêu cầu tới Kafka
       const encryptedResponse = await firstValueFrom(
-        this.categoriesClient.send('brand.getBrand', encryptData),
+        this.brandsClient.send('brand.getBrand', encryptData),
       );
       // Giải mã dữ liệu nhận về
       const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);
@@ -127,7 +127,7 @@ export class BrandsService {
       const encryptData = await this.encryptService.Encrypt(updateBrandDto);
       // Gửi yêu cầu tới Kafka
       const encryptedResponse = await firstValueFrom(
-        this.categoriesClient.send('brand.update', encryptData),
+        this.brandsClient.send('brand.update', encryptData),
       );
       // Giải mã dữ liệu nhận về
       const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);
@@ -149,7 +149,7 @@ export class BrandsService {
       const encryptData = await this.encryptService.Encrypt({ id });
       // Gửi yêu cầu tới Kafka
       const encryptedResponse = await firstValueFrom(
-        this.categoriesClient.send('brand.delete', encryptData),
+        this.brandsClient.send('brand.delete', encryptData),
       );
       // Giải mã dữ liệu nhận về
       const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);

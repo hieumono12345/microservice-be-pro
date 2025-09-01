@@ -1,59 +1,88 @@
 /* eslint-disable */
 import { Controller, Post, Body, Logger, Get, Put, Delete, Query, Param, Patch, UseGuards, Req, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { OrderService } from './orders.service';
-import { CreateOrderDto, UpdateOrderStatusDto, CreateOrderDtoRequest } from './dto';
+import { CreateOrderDto, UpdateOrderDto, UpdateOrderReqDto, CreateOrderReqDto } from './dto';
 import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 import { RoleGuard } from '../jwt/role.guard';
 import { RolesGuard } from '../jwt/roles.guard';
-import { OrderStatus } from '../enums/order-status.enum';
-@Controller('orders')
+
+@Controller('order')
 export class OrderController {
   private readonly logger = new Logger(OrderController.name);
 
   constructor(private readonly ordersService: OrderService) { }
 
-  @Post()
-  @UseGuards(JwtAuthGuard, new RoleGuard('user'))
-  async create(@Body() dto: CreateOrderDtoRequest, @Req() req) {
-    return this.ordersService.createOrder(dto, req.user.userId);
-    return 'oke';
-  }
-
-  @Get()
   @UseGuards(JwtAuthGuard, new RolesGuard(['admin']))
-  async getAllOrders() {
+  @Get('get-all')
+  getAll(@Req() request) {
+    this.logger.log(`Fetching all orders...`);
     return this.ordersService.getAllOrders();
   }
 
-  @Get('my')
-  @UseGuards(JwtAuthGuard, new RolesGuard(['user']))
-  async getAllOrdersByUser(@Req() req) {
-    return this.ordersService.getAllOrdersByUserId(req.user.userId);
+  @Get('get-order/:id')
+  @UseGuards(JwtAuthGuard, new RolesGuard(['admin', 'user']))
+  getById(@Param('id') id: string, @Req() request) {
+    if (id == undefined || id == "") {
+      this.logger.error(`ID undefined`);
+      return { message: `ID undefined` };
+    }
+    this.logger.log(`Fetching order with ID ${id}...`);
+    return this.ordersService.getOrder(id);
   }
 
-  @Get(':id')
-  @UseGuards(JwtAuthGuard, new RolesGuard(['user']))
-  async getOrderDetail(@Param('id') id: string, @Req() req) {
-    const order = await this.ordersService.getOrderById(id, req.user.userId);
-    if (!order) throw new NotFoundException('Order not found');
-    return order;
+  @Get('get-order-user/:id')
+  @UseGuards(JwtAuthGuard, new RolesGuard(['admin', 'user']))
+  getOrderByUser(@Param('id') id: string, @Req() request) {
+    if (id == undefined || id == "") {
+      this.logger.error(`ID undefined`);
+      return { message: `ID undefined` };
+    }
+    this.logger.log(`Fetching order with ID ${id}...`);
+    return this.ordersService.getAllOrderByUser(request.user.userId);
   }
 
-  // --- ADMIN UPDATE ---
-  @Patch(':id/admin-status')
-  @UseGuards(JwtAuthGuard, new RolesGuard(['admin']))
-  async updateStatusAdmin(@Param('id') id: string, @Body('status') status: OrderStatus) {
-    return this.ordersService.updateStatusAdmin(id, status);
+  @Post('create-order')
+  @UseGuards(JwtAuthGuard, new RolesGuard(['admin', 'user']))
+  async create(@Body() createOrderDto: CreateOrderReqDto, @Req() request) {
+    this.logger.log('Creating order... by ', request.user.username);
+    createOrderDto.user = request.user.userId;
+    // ép kiểu sang CreateOrderDto
+
+    return this.ordersService.createOrders(createOrderDto);
   }
 
-  // --- USER UPDATE ---
-  @Patch(':id/user-status')
-  @UseGuards(JwtAuthGuard, new RolesGuard(['user']))
-  async updateStatusUser(
-    @Param('id') id: string,
-    @Body('status') status: OrderStatus,
-    @Req() req,
-  ) {
-    return this.ordersService.updateStatusUser(id, req.user.userId, status);
+  @Put('update-order/:id')
+  @UseGuards(JwtAuthGuard, new RoleGuard('admin'))
+  update(@Param('id') id: string) {
+    if (id == undefined || id == "") {
+      this.logger.error(`ID undefined`);
+      return { message: `ID undefined` };
+    }
+    this.logger.log(`Updating order with ID ${id}...`);
+    // return { message: `Update category with ID ${id}`, data: updateCategoryDto };
+    return this.ordersService.updateOrder(id);
+  }
+
+  @Put('cancel-order/:id')
+  @UseGuards(JwtAuthGuard, new RoleGuard('admin'))
+  cancel(@Param('id') id: string) {
+    if (id == undefined || id == "") {
+      this.logger.error(`ID undefined`);
+      return { message: `ID undefined` };
+    }
+    this.logger.log(`Updating order with ID ${id}...`);
+    // return { message: `Update category with ID ${id}`, data: updateCategoryDto };
+    return this.ordersService.cancelOrder(id);
+  }
+
+  @Delete('delete-order/:id')
+  @UseGuards(JwtAuthGuard, new RoleGuard('admin'))
+  delete(@Param('id') id: string) {
+    if (id == undefined || id == "") {
+      this.logger.error(`ID undefined`);
+      return { message: `ID undefined` };
+    }
+    this.logger.log(`Deleting order with ID ${id}...`);
+    return this.ordersService.deleteOrder(id);
   }
 }

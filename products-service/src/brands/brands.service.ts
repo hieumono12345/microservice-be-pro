@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 import { Brand } from '../product/entities/brand.entity';
 import { CreateBrandDto, UpdateBrandDto, DeleteBrandDto, GetAllDto } from './dto';
 import { EncryptService } from 'src/encrypt/encrypt.service';
@@ -28,7 +28,10 @@ export class BrandsService {
         where: { name: dto.name },
       });
       if (existingBrand) {
-        throw new BadRequestException('Brand with this name already exists');
+        return this.encryptService.Encrypt({
+          status: 'ERR',
+          message: 'ERROR',
+        });
       }
 
       // Tạo mới thương hiệu
@@ -41,13 +44,9 @@ export class BrandsService {
 
       // Mã hóa dữ liệu trả về
       return this.encryptService.Encrypt({
-        message: 'Brand created successfully',
-        data: {
-          id: savedBrand.id,
-          name: savedBrand.name,
-          createdAt: savedBrand.createdAt,
-          updatedAt: savedBrand.updatedAt,
-        },
+        status: 'OK',
+        message: 'SUCCESS',
+        data: savedBrand,
       });
 
     } catch (error) {
@@ -68,7 +67,10 @@ export class BrandsService {
       // Tìm thương hiệu theo id
       const brand = await this.brandsRepository.findOne({ where: { id: dto.id } });
       if (!brand) {
-        throw new NotFoundException('Brand not found');
+        return this.encryptService.Encrypt({
+          status: 'ERR',
+          message: 'ERROR',
+        });
       }
 
       // Cập nhật thông tin thương hiệu
@@ -79,12 +81,9 @@ export class BrandsService {
 
       // Mã hóa dữ liệu trả về
       return this.encryptService.Encrypt({
-        message: 'Brand updated successfully',
-        data: {
-          id: updatedBrand.id,
-          name: updatedBrand.name,
-          updatedAt: updatedBrand.updatedAt,
-        },
+        status: 'OK',
+        message: 'SUCCESS',
+        data: brand,
       });
 
     } catch (error) {
@@ -105,7 +104,10 @@ export class BrandsService {
       // Tìm thương hiệu theo id
       const brand = await this.brandsRepository.findOne({ where: { id: dto.id } });
       if (!brand) {
-        throw new NotFoundException('Brand not found');
+        return this.encryptService.Encrypt({
+          status: 'ERR',
+          message: 'ERROR',
+        });
       }
 
       // Xóa thương hiệu
@@ -113,7 +115,8 @@ export class BrandsService {
 
       // Mã hóa dữ liệu trả về
       return this.encryptService.Encrypt({
-        message: 'Brand deleted successfully',
+        status: 'OK',
+        message: 'SUCCESS',
       });
 
     } catch (error) {
@@ -130,22 +133,32 @@ export class BrandsService {
         throw new BadRequestException('Invalid data');
       }
 
+      // Tạo filter object
+      const whereCondition: any = {};
+      if (dto.filterName && dto.filterName.trim() !== '') {
+        whereCondition.name = Like(`%${dto.filterName}%`);
+      }
+
       // Lấy danh sách thương hiệu với phân trang và lọc
       const [brands, total] = await this.brandsRepository.findAndCount({
+        where: whereCondition,
         skip: (dto.page - 1) * dto.pageSize,
         take: dto.pageSize,
-        where: {
-          // name: Like(`%${dto.filterName}%`),
-        },
         order: {
-          createdAt: dto.sortBy === 'asc' ? 'ASC' : 'DESC',
+          name: dto.sortOrder === 'ASC' ? 'ASC' : 'DESC',
         },
       });
 
+      // Tính tổng số trang
+      const totalPage = Math.ceil(total / dto.pageSize);
+
       // Mã hóa dữ liệu trả về
       return this.encryptService.Encrypt({
-        message: 'Brands retrieved successfully',
+        status: 'OK',
+        message: 'SUCCESS',
         data: brands,
+        total: total,
+        totalPage: totalPage,
       });
 
     } catch (error) {
@@ -159,7 +172,8 @@ export class BrandsService {
 
       // Mã hóa dữ liệu trả về
       return this.encryptService.Encrypt({
-        message: 'Brands retrieved successfully',
+        status: 'OK',
+        message: 'SUCCESS',
         data: brands,
       });
 
@@ -186,7 +200,8 @@ export class BrandsService {
 
       // Mã hóa dữ liệu trả về
       return this.encryptService.Encrypt({
-        message: 'Brand retrieved successfully',
+        status: 'OK',
+        message: 'SUCCESS',
         data: brand,
       });
 

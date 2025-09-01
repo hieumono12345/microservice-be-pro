@@ -4,10 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, In } from 'typeorm';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
-import { OrderStatusHistory } from './entities/order-status-history.entity';
 import { Product } from './entities/product.entity';
-import { CreateOrderDto, UpdateOrderStatusDto } from './dto';
-import { OrderStatus } from '../enums/order-status.enum';
+import { CreateOrderDto } from './dto';
 import { EncryptService } from 'src/encrypt/encrypt.service';
 
 
@@ -19,8 +17,8 @@ export class OrderService {
     private readonly encryptService: EncryptService,
     @InjectRepository(Order) private orderRepo: Repository<Order>,
     @InjectRepository(OrderItem) private orderItemRepo: Repository<OrderItem>,
-    @InjectRepository(OrderStatusHistory) private orderStatusHistoryRepo: Repository<OrderStatusHistory>,
     @InjectRepository(Product) private readonly productRepo: Repository<Product>,
+
   ) { }
 
   // --- CREATE ORDER ---
@@ -28,8 +26,14 @@ export class OrderService {
     try {
       const dto: CreateOrderDto = await this.encryptService.Decrypt(encryptData);
 
+      if (!dto || !dto.orderItems || dto.orderItems.length === 0) {
+        throw new BadRequestException('Order items are required');
+      }
+
+      // debug log dto
+      this.loger.log('CreateOrderDto:', dto);
       // Lấy list sản phẩm từ bảng products
-      const productIds = dto.items.map(i => i.productId);
+      const productIds = dto.orderItems.map(i => i.product);
       let products;
       try {
         products = await this.productRepo.findBy({ id: In(productIds) });
@@ -37,41 +41,68 @@ export class OrderService {
         this.loger.error('Error fetching products:', error);
         throw new NotFoundException('Products not found');
       }
-      if (products.length !== dto.items.length) {
+
+      if (products.length !== dto.orderItems.length) {
+        this.loger.error(`Product count mismatch. Expected: ${dto.orderItems.length}, Found: ${products.length}`);
+        const foundIds = products.map(p => p.id);
+        const missingIds = productIds.filter(id => !foundIds.includes(id));
+        this.loger.error('Missing product IDs:', missingIds);
         throw new BadRequestException('Invalid product IDs');
       }
 
+      // debug log products
+      this.loger.log('Fetched Products:', products);
       // Kiểm tra tồn kho
-      for (const item of dto.items) {
-        const product = products.find(p => p.id === item.productId);
-        if (!product || product.stock < item.quantity) {
+      for (const item of dto.orderItems) {
+        const product = products.find(p => p.id === item.product);
+        this.loger.log(`Found product: ${product ? JSON.stringify({ id: product.id, name: product.name, stock: product.stock }) : 'NOT FOUND'}`);
+
+        if (!product) {
+          this.loger.error(`Product with ID ${item.product} not found`);
+          throw new BadRequestException(`Product ${item.product} not found`);
+        }
+
+        if (product.stock < item.quantity) {
+          this.loger.error(`Insufficient stock for ${product.name}. Required: ${item.quantity}, Available: ${product.stock}`);
           throw new BadRequestException(`Product ${product.name} is out of stock or insufficient quantity`);
         }
       }
+
       // Tính tổng giá trị đơn hàng
-      const totalPrice = dto.items.reduce((total, item) => {
-        const product = products.find(p => p.id === item.productId);
-        return total + (product.price * item.quantity);
+      const totalPrice = dto.orderItems.reduce((total, item) => {
+        const product = products.find(p => p.id === item.product);
+        const itemTotal = product.price * item.quantity;
+        this.loger.log(`Item: ${product.name}, Price: ${product.price}, Quantity: ${item.quantity}, Subtotal: ${itemTotal}`);
+        return total + itemTotal;
       }, 0);
 
 
+      if (dto.user == null || dto.user == undefined || dto.user == "") {
+        throw new UnauthorizedException('User ID is required');
+      }
+
       // Tạo đơn hàng
       const order = this.orderRepo.create({
-        userId: dto.userId,
-        receiverName: dto.receiverName,
-        receiverPhoneNumber: dto.receiverPhoneNumber,
-        receiverAddress: dto.receiverAddress,
+        user: dto.user,
+        shippingAddress: dto.shippingAddress,
+        recipient: dto.recipient,
+        phone: dto.phone,
+        paymentMethod: dto.paymentMethod,
+        orderDate: new Date(),
         totalPrice,
-        status: OrderStatus.PENDING,
+        status: 1,
       });
       await this.orderRepo.save(order);
       if (!order) {
-        throw new BadRequestException('Failed to create order');
+        return this.encryptService.Encrypt({
+          status: 'ERR',
+          message: 'CREATE ORDER FAIL'
+        });
       }
 
       // nếu tạo đơn hàng thành công thì trừ tồn kho
-      for (const item of dto.items) {
-        const product = products.find(p => p.id === item.productId);
+      for (const item of dto.orderItems) {
+        const product = products.find(p => p.id === item.product);
         if (product) {
           product.stock -= item.quantity;
           await this.productRepo.save(product);
@@ -81,19 +112,23 @@ export class OrderService {
       // Tạo các items đơn hàng
       try {
         const orderItems: OrderItem[] = [];
-        for (const item of dto.items) {
-          const product = products.find(p => p.id === item.productId);
+        for (const item of dto.orderItems) {
+          const product = products.find(p => p.id === item.product);
           if (!product) {
-            throw new BadRequestException(`Product ${item.productId} not found`);
+            throw new BadRequestException(`Product ${item.product} not found`);
           }
 
-          orderItems.push(this.orderItemRepo.create({
+          const orderItemData = {
             order,
-            productId: product.id, // hoặc product nếu có quan hệ
+            product: product.id,
+            name: product.name,
             quantity: item.quantity,
             price: product.price,
-            productName: product.name,
-          }));
+            totalPrice: product.price * item.quantity,
+          };
+
+          this.loger.log('Creating order item:', orderItemData);
+          orderItems.push(this.orderItemRepo.create(orderItemData));
         }
         await this.orderItemRepo.save(orderItems);
       } catch (error) {
@@ -102,192 +137,149 @@ export class OrderService {
       }
 
 
-      // // lỗi ở trên làm dưới này chưa thêm được status history
-      await this.addStatusHistory(order, OrderStatus.PENDING, 'Order created');
-
       return this.encryptService.Encrypt({
-        message: 'Order created successfully',
-        data: order,
+        status: 'OK',
+        message: 'SUCCESS',
+        order: order,
+        OrderItems: order.items,
       });
     } catch (error) {
       throw new BadRequestException(`Failed to create order: ${error.message}`);
     }
   }
 
-
   // --- GET ALL ---  
   async getAllOrders(): Promise<any> {
-    const orders = await this.orderRepo.find({
-      relations: ['items', 'statusHistory'],
-    });
+    try {
+      const orders = await this.orderRepo.find({
+        relations: ['items'],
+      });
 
-    return this.encryptService.Encrypt({
-      message: 'Orders fetched successfully',
-      data: orders,
-    });
+      return this.encryptService.Encrypt({
+        status: 'OK',
+        message: 'SUCCESS',
+        data: orders,
+      });
+    } catch (error) {
+      throw new BadRequestException(`Failed to fetch orders: ${error.message}`);
+    }
   }
 
-  // --- GET BY USER ---
+  // // --- GET BY USER ---
   async getAllOrdersByUserId(encryptData: any): Promise<any> {
     const { userId } = await this.encryptService.Decrypt(encryptData);
     // debug
     this.loger.log(`Fetching orders for user ${userId}...`);
     const orders = await this.orderRepo.find({
-      where: { userId },
-      relations: ['items', 'statusHistory'],
+      where: { user: userId },
+      relations: ['items'],
     });
 
     return this.encryptService.Encrypt({
-      message: 'Orders fetched successfully',
+      status: 'OK',
+      message: 'SUCCESS',
       data: orders,
     });
   }
 
-  // --- GET BY ID ---
-  async getOrderById(encryptData: any): Promise<any> {
-    const { orderId, userId } = await this.encryptService.Decrypt(encryptData);
+  // // --- GET BY ID ---
+  async getOrder(encryptData: any): Promise<any> {
+    const { orderId } = await this.encryptService.Decrypt(encryptData);
 
     const order = await this.orderRepo.findOne({
-      where: { id: orderId, userId: userId },
-      relations: ['items', 'statusHistory'],
+      where: { id: orderId },
+      relations: ['items'],
     });
     if (!order) return this.encryptService.Encrypt({ message: `Order ${orderId} not found` });
 
     return this.encryptService.Encrypt({
-      message: 'Order fetched successfully',
+      status: 'OK',
+      message: 'SUCCESS',
       data: order,
     });
   }
 
-  // --- ADMIN UPDATE ---
-  async updateStatusAdmin(encryptData: any): Promise<any> {
-    const { orderId, status } = await this.encryptService.Decrypt(encryptData);
-    let order;
-
-    order = await this.orderRepo.findOne({
-      where: { id: orderId },
-      relations: ['items', 'statusHistory'],
-    });
-    if (!order) return this.encryptService.Encrypt({ message: `Order ${orderId} not found` });
-
-    if (![OrderStatus.SHIPPED, OrderStatus.CANCELLED].includes(status)) {
-      return this.encryptService.Encrypt({
-        message: `Admin chỉ được phép cập nhật shipped hoặc cancelled`,
-      });
-    }
-    if (order.status === OrderStatus.SHIPPED && status === OrderStatus.CANCELLED) {
-      return this.encryptService.Encrypt({
-        message: `Order ${orderId} has been shipped, cannot cancel`,
-      });
-    }
-    if (order.status === OrderStatus.CANCELLED) {
-      return this.encryptService.Encrypt({
-        message: `Order ${orderId} is already cancelled, cannot update to ${status}`,
-      });
-    }
-    if (order.status === status) {
-      return this.encryptService.Encrypt({
-        message: `Order ${orderId} is already in status ${status}, no update needed`,
-      });
-    }
-
-    order.status = status;
-    await this.orderRepo.save(order);
-    await this.addStatusHistory(order, status, 'Admin updated status');
-    if (status === OrderStatus.CANCELLED) {
-      await this.handleCancelOrder(order); // cập nhật tồn kho nếu đơn hàng bị hủy
-    }
-
-    return this.encryptService.Encrypt({
-      message: 'Order status updated by admin',
-      data: order,
-    });
-  }
-
-  // --- USER UPDATE ---
-  async updateStatusUser(encryptData: any): Promise<any> {
-    this.loger.log('Updating order status by user...');
-
-    const { orderId, userId, status } = await this.encryptService.Decrypt(encryptData);
-
-    this.loger.log(`Updating order ${orderId} status to ${status} for user ${userId}...`);
-
+  // // --- UPDATE ---
+  async updateOrder(encryptData: any): Promise<any> {
+    const { orderId } = await this.encryptService.Decrypt(encryptData);
     let order;
     order = await this.orderRepo.findOne({
       where: { id: orderId },
-      relations: ['items', 'statusHistory'],
     });
 
     if (!order) throw new NotFoundException('Order not found');
-    if (order.userId !== userId) {
-      return this.encryptService.Encrypt({
-        message: `User ${userId} is not authorized to update order ${orderId}`,
-      });
-    }
-    if (![OrderStatus.CANCELLED, OrderStatus.DELIVERED].includes(status)) {
-      return this.encryptService.Encrypt({
-        message: `User chỉ được phép cập nhật cancelled hoặc delivered`,
-      });
-    }
-    if (status === OrderStatus.DELIVERED && order.status !== OrderStatus.SHIPPED) {
-      return this.encryptService.Encrypt({
-        message: `Order ${orderId} is not shipped yet, cannot mark as delivered`,
-      });
-    }
-    if (status === OrderStatus.CANCELLED && order.status === OrderStatus.SHIPPED) {
-      return this.encryptService.Encrypt({
-        message: `Order ${orderId} has been shipped, cannot cancel`,
-      });
-    }
-    if (order.status === OrderStatus.CANCELLED) {
-      return this.encryptService.Encrypt({
-        message: `Order ${orderId} is already cancelled, cannot update to ${status}`,
-      });
-    }
-    if (order.status === status) {
-      return this.encryptService.Encrypt({
-        message: `Order ${orderId} is already in status ${status}, no update needed`,
-      });
-    }
 
-    order.status = status;
-    await this.orderRepo.save(order);
-    await this.addStatusHistory(order, status, 'User updated status');
-    if (status === OrderStatus.CANCELLED) {
-      await this.handleCancelOrder(order); // cập nhật tồn kho nếu đơn hàng bị hủy
+    if (order.status === 1) {
+      order.status = 2
+    } else if (order.status === 2) {
+      order.status = 3
     }
+    await this.orderRepo.save(order);
 
     return this.encryptService.Encrypt({
-      message: 'Order status updated by user',
-      data: order,
+      status: 'OK',
+      message: 'SUCCESS',
     });
   }
 
-  // --- helper ---
-  private async addStatusHistory(order: Order, status: OrderStatus, note?: string) {
-    const history = this.orderStatusHistoryRepo.create({
-      order,
-      status,
-      note,
+  // // --- CANCEL ---
+  async cancelOrder(encryptData: any): Promise<any> {
+    const { orderId } = await this.encryptService.Decrypt(encryptData);
+    let order;
+    order = await this.orderRepo.findOne({
+      where: { id: orderId },
+      relations: ['items'],
     });
-    await this.orderStatusHistoryRepo.save(history);
-  }
+    if (!order) throw new NotFoundException('Order not found');
 
-  private async handleCancelOrder(order: Order, reason?: string) {
-
-    // get list order items
-    const listItemIDs = order.items;
-
-    // get detail order items
-    const orderItems = await this.orderItemRepo.findBy({ id: In(listItemIDs) });
-
-    // update stock for each item
-    for (const item of orderItems) {
-      const product = await this.productRepo.findOneBy({ id: item.productId });
+    // trả lại tồn kho
+    for (const item of order.items) {
+      const product = await this.productRepo.findOne({ where: { id: item.product } });
       if (product) {
-        product.stock += item.quantity; // tăng tồn kho
+        product.stock += item.quantity;
         await this.productRepo.save(product);
       }
     }
+
+    order.status = 0;
+    await this.orderRepo.save(order);
+
+    return this.encryptService.Encrypt({
+      status: 'OK',
+      message: 'SUCCESS',
+    });
+  }
+
+  // // --- DELETE ---
+  async deleteOrder(encryptData: any): Promise<any> {
+    const { id } = await this.encryptService.Decrypt(encryptData);
+    let order;
+    order = await this.orderRepo.findOne({
+      where: { id: id },
+      relations: ['items'],
+    });
+    if (!order) throw new NotFoundException('Order not found');
+
+    // trả lại tồn kho
+    if (order.status !== 0) {
+      for (const item of order.items) {
+        const product = await this.productRepo.findOne({ where: { id: item.product } });
+        if (product) {
+          product.stock += item.quantity;
+          await this.productRepo.save(product);
+        }
+      }
+    }
+
+    // Xóa các mục trong đơn hàng
+    await this.orderItemRepo.delete({ order: { id: id } });
+    // Xóa đơn hàng
+    await this.orderRepo.delete(id);
+
+    return this.encryptService.Encrypt({
+      status: 'OK',
+      message: 'SUCCESS',
+    });
   }
 }
+

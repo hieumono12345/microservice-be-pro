@@ -5,41 +5,41 @@ import { ProductService } from './product.service';
 
 @Controller()
 export class ProductController {
-  constructor(private readonly productsService: ProductService) {}
+  constructor(private readonly productsService: ProductService) { }
 
-  @MessagePattern('products.create')
+  @MessagePattern('product.create')
   async handleCreate(encryptData: any) {
-    Logger.debug('Received create product data:', encryptData);
+    Logger.debug('Received data:', encryptData);
     return this.productsService.create(encryptData);
   }
 
-  @MessagePattern('products.update')
+  @MessagePattern('product.update')
   async handleUpdate(encryptData: any) {
-    Logger.debug('Received update product data:', encryptData);
+    Logger.debug('Received update data:', encryptData);
     return this.productsService.update(encryptData);
   }
 
-  @MessagePattern('products.delete')
+  @MessagePattern('product.delete')
   async handleDelete(encryptData: any) {
-    Logger.debug('Received delete product data:', encryptData);
+    Logger.debug('Received delete data:', encryptData);
     return this.productsService.delete(encryptData);
   }
 
-  @MessagePattern('products.getAll')
-  async handleGetAll() {
+  @MessagePattern('product.getAll')
+  async handleGetAll(encryptData: any) {
     Logger.debug('Fetching all products');
-    return this.productsService.getAll();
+    return this.productsService.getAll(encryptData);
   }
 
-  @MessagePattern('products.getById')
+  @MessagePattern('product.getAllProducts')
+  async handleGetAllProduct() {
+    Logger.debug('Fetching all products');
+    return this.productsService.getAllProduct();
+  }
+
+  @MessagePattern('product.getProduct')
   async handleGetById(encryptData: any) {
     Logger.debug('Fetching product by id:', encryptData);
-    return this.productsService.getById(encryptData);
-  }
-
-  @MessagePattern('products.getByCategory')
-  async handleGetByCategory(encryptData: any) {
-    Logger.debug('Fetching products by category:', encryptData);
-    return this.productsService.getByCategory(encryptData);
+    return this.productsService.getProduct(encryptData);
   }
 }

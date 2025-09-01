@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { Category } from '../product/entities/category.entity';
 import { CreateCategoryDto, UpdateCategoryDto, DeleteCategoryDto, GetAllDto } from './dto';
 import { EncryptService } from 'src/encrypt/encrypt.service';
@@ -28,7 +28,10 @@ export class CategoriesService {
         where: { name: dto.name },
       });
       if (existingCategory) {
-        throw new BadRequestException('Category with this name already exists');
+        return this.encryptService.Encrypt({
+          status: 'ERR',
+          message: 'ERROR',
+        });
       }
 
       // Tạo mới danh mục
@@ -41,7 +44,8 @@ export class CategoriesService {
 
       // Mã hóa dữ liệu trả về
       return this.encryptService.Encrypt({
-        message: 'Category created successfully',
+        status: 'OK',
+        message: 'SUCCESS',
         data: {
           id: savedCategory.id,
           name: savedCategory.name,
@@ -68,7 +72,11 @@ export class CategoriesService {
       // Tìm danh mục theo id
       const category = await this.categoriesRepository.findOne({ where: { id: dto.id } });
       if (!category) {
-        throw new NotFoundException('Category not found');
+        return this.encryptService.Encrypt({
+          status: 'ERR',
+          message: 'ERROR',
+        });
+        // throw new NotFoundException('Category not found');
       }
 
       // Cập nhật thông tin danh mục
@@ -79,7 +87,8 @@ export class CategoriesService {
 
       // Mã hóa dữ liệu trả về
       return this.encryptService.Encrypt({
-        message: 'Category updated successfully',
+        status: 'OK',
+        message: 'SUCCESS',
         data: {
           id: updatedCategory.id,
           name: updatedCategory.name,
@@ -105,7 +114,10 @@ export class CategoriesService {
       // Tìm danh mục theo id
       const category = await this.categoriesRepository.findOne({ where: { id: dto.id } });
       if (!category) {
-        throw new NotFoundException('Category not found');
+        return this.encryptService.Encrypt({
+          status: 'ERR',
+          message: 'ERROR',
+        });
       }
 
       // Xóa danh mục
@@ -113,7 +125,8 @@ export class CategoriesService {
 
       // Mã hóa dữ liệu trả về
       return this.encryptService.Encrypt({
-        message: 'Category deleted successfully',
+        status: 'OK',
+        message: 'SUCCESS',
       });
 
     } catch (error) {
@@ -130,26 +143,36 @@ export class CategoriesService {
         throw new BadRequestException('Invalid data');
       }
 
-      // Lấy danh sách danh mục với phân trang và lọc
+      // Tạo filter object
+      const whereCondition: any = {};
+      if (dto.filterName && dto.filterName.trim() !== '') {
+        whereCondition.name = Like(`%${dto.filterName}%`);
+      }
+
+      // Lấy danh sách thương hiệu với phân trang và lọc
       const [categories, total] = await this.categoriesRepository.findAndCount({
+        where: whereCondition,
         skip: (dto.page - 1) * dto.pageSize,
         take: dto.pageSize,
-        where: {
-          // name: Like(`%${dto.filterName}%`),
-        },
         order: {
-          createdAt: dto.sortBy === 'asc' ? 'ASC' : 'DESC',
+          name: dto.sortOrder === 'ASC' ? 'ASC' : 'DESC',
         },
       });
+
+      // Tính tổng số trang
+      const totalPage = Math.ceil(total / dto.pageSize);
 
       // Mã hóa dữ liệu trả về
       return this.encryptService.Encrypt({
-        message: 'Categories retrieved successfully',
+        status: 'OK',
+        message: 'SUCCESS',
         data: categories,
+        total: total,
+        totalPage: totalPage,
       });
 
     } catch (error) {
-      throw new BadRequestException(`Failed to retrieve categories: ${error.message}`);
+      throw new BadRequestException(`Failed to retrieve categorys: ${error.message}`);
     }
   }
 
@@ -159,7 +182,8 @@ export class CategoriesService {
 
       // Mã hóa dữ liệu trả về
       return this.encryptService.Encrypt({
-        message: 'Categories retrieved successfully',
+        status: 'OK',
+        message: 'SUCCESS',
         data: categories,
       });
 
@@ -186,7 +210,8 @@ export class CategoriesService {
 
       // Mã hóa dữ liệu trả về
       return this.encryptService.Encrypt({
-        message: 'Category retrieved successfully',
+        status: 'OK',
+        message: 'SUCCESS',
         data: category,
       });
 
@@ -194,5 +219,4 @@ export class CategoriesService {
       throw new BadRequestException(`Failed to retrieve category: ${error.message}`);
     }
   }
-
 }

@@ -9,7 +9,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrderModule } from './orders/orders.module';
 import { Order } from './orders/entities/order.entity';
 import { OrderItem } from './orders/entities/order-item.entity';
-import { OrderStatusHistory } from './orders/entities/order-status-history.entity';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -25,19 +24,14 @@ import * as path from 'path';
         const certsPath = path.join(__dirname, '..', '..', 'certs', 'mysql');
         return {
           type: 'mysql',
-          // host: configService.get<string>('MYSQL_HOST', 'localhost'),
-          // port: configService.get<number>('MYSQL_PORT', 3306),
-          // username: configService.get<string>('MYSQL_USERNAME', 'offline_user'),
-          // password: configService.get<string>('MYSQL_PASSWORD', 'offline_password'),
-          // database: configService.get<string>('MYSQL_DATABASE', 'offline_db'),
           host: 'localhost',
           port: 3306,
           username: 'offline_user',
           password: 'offline_password',
           database: 'offline_db',
-          entities: [Order, OrderItem, OrderStatusHistory],
+          entities: [Order, OrderItem],
           autoLoadEntities: true,
-          synchronize: configService.get<string>('NODE_ENV', 'development') === 'development',
+          synchronize: false,
           ssl: {
             ca: fs.readFileSync(path.join(certsPath, 'ca.crt')),
             cert: fs.readFileSync(path.join(certsPath, 'client.crt')),

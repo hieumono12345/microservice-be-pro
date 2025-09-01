@@ -3,7 +3,7 @@ import { Inject, Injectable, Logger, BadRequestException } from '@nestjs/common'
 import { ClientKafka } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { EncryptService } from 'src/encrypt/encrypt.service';
-import { CreateCategoryDto, UpdateCategoryDto, GetAllCategoryDto } from './dto';
+import { CreateCategoryDto, UpdateCategoryDto, GetAllDto } from './dto';
 
 @Injectable()
 export class CategoryService {
@@ -52,10 +52,9 @@ export class CategoryService {
       this.logger.error(`Failed to create category: ${error.message}`);
       throw new BadRequestException(`Failed to create category: ${error.message}`);
     }
-
   }
 
-  async getAll(getAllCategoryDto: GetAllCategoryDto) {
+  async getAll(getAllCategoryDto: GetAllDto) {
     this.logger.log('Fetching all categorys...');
     try {
       // Mã hóa dữ liệu gửi đi (dữ liệu rỗng)

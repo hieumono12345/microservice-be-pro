@@ -1,69 +1,66 @@
 /* eslint-disable */
-import { Controller, Post, Body, Logger, Get, Put, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Logger, Get, Put, Delete, UseGuards, Query, Param, Req } from '@nestjs/common';
 import { ProductService } from './product.service';
-import { CreateProductDto, UpdateProductDto, DeleteProductDto } from './dto';
+import { CreateProductDto, UpdateProductDto, DeleteProductDto, GetAllDto, UpdateProductReqDto } from './dto';
 import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 import { RoleGuard } from '../jwt/role.guard';
-import { RolesGuard } from '../jwt/roles.guard';
 
-// @UseGuards(JwtAuthGuard)
-@Controller('products')
+
+@Controller('product')
 export class ProductController {
   private readonly logger = new Logger(ProductController.name);
-  constructor(private readonly productService: ProductService) {}
+  constructor(private readonly productsService: ProductService) { }
 
-  // thiếu DTO
-  @Post()
-  @UseGuards(JwtAuthGuard, new RoleGuard('admin'))
-  create(@Body() createProduct: CreateProductDto) {
-    return this.productService.createProduct(createProduct);
+  @Get('get-all')
+  getAll(@Query() getAllProductDto: GetAllDto) {
+    this.logger.log('Fetching all products...');
+    return this.productsService.getAll(getAllProductDto);
   }
 
-  // Get all products
-  @Get()
-  getAll() {
-    return this.productService.getAllProducts();
+  @Get('get-all-product')
+  getAllProduct() {
+    this.logger.log('Fetching all products...');
+    return this.productsService.getAllProducts();
   }
 
-  // Get product by ID
-  @Get(':id')
-  getById(@Body('id') id: string) {
+  @Get('get-product/:id')
+  getById(@Param('id') id: string) {
     if (id == undefined || id == "") {
       this.logger.error(`ID undefined`);
       return { message: `ID undefined` };
     }
     this.logger.log(`Fetching product with ID ${id}...`);
-    return this.productService.getProductById(id);
+    return this.productsService.getProduct(id);
   }
 
-  // Update product by ID
-  @Put(':id')
-  @UseGuards(JwtAuthGuard, new RolesGuard(['admin']))
-  update(@Body('id') id: string, @Body() updateProduct: UpdateProductDto) {
+  @Post('create-product')
+  @UseGuards(JwtAuthGuard, new RoleGuard('admin'))
+  async create(@Body() createProductDto: CreateProductDto, @Req() request) {
+    this.logger.log('Creating product... by ', request.user.username);
+    return this.productsService.createProducts(createProductDto);
+  }
+
+  @Put('update-product/:id')
+  @UseGuards(JwtAuthGuard, new RoleGuard('admin'))
+  update(@Param('id') id: string, @Body() UpdateProductDto: UpdateProductReqDto) {
     if (id == undefined || id == "") {
       this.logger.error(`ID undefined`);
       return { message: `ID undefined` };
     }
     this.logger.log(`Updating product with ID ${id}...`);
-    return this.productService.updateProduct(updateProduct);
+    UpdateProductDto.id = id;
+    // return { message: `Update category with ID ${id}`, data: updateProductDto };
+    return this.productsService.updateProduct(UpdateProductDto);
   }
 
-  // Delete product by ID
-  @Delete(':id')
+  @Delete('delete-product/:id')
   @UseGuards(JwtAuthGuard, new RoleGuard('admin'))
-  delete(@Body('id') id: DeleteProductDto) {
-    this.logger.log(`Deleting product with ID ${id}...`);
-    return this.productService.deleteProduct(id);
-  }
-
-  // Get products by category
-  @Get('category/:categoryId')
-  getByCategory(@Body('categoryId') categoryId: string) {
-    if (categoryId == undefined || categoryId == "") {
-      this.logger.error(`Category ID undefined`);
-      return { message: `Category ID undefined` };
+  delete(@Param('id') id: string) {
+    if (id == undefined || id == "") {
+      this.logger.error(`ID undefined`);
+      return { message: `ID undefined` };
     }
-    this.logger.log(`Fetching products for category ID ${categoryId}...`);
-    return this.productService.getProductsByCategory(categoryId);
+    this.logger.log(`Deleting product with ID ${id}...`);
+    return this.productsService.deleteProduct(id);
   }
 }

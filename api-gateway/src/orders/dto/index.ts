@@ -1,91 +1,148 @@
-import {
-  IsString,
-  IsUUID,
-  IsNotEmpty,
-  IsNumber,
-  Min,
-  IsOptional,
-  IsArray,
-  ValidateNested,
-  IsPositive,
-  IsIn,
-  Length,
-} from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsString, IsNotEmpty, IsNumber, IsArray, ValidateNested, IsDateString, IsOptional, IsPositive } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 
-// ----- Create Order DTO -----
-export class CreateOrderItemDto {
-  @IsUUID()
+class CreateOrderItemDto {
+  @IsString()
   @IsNotEmpty()
-  productId: string;
+  product: string; // id sản phẩm (ObjectId)
 
   @IsString()
   @IsNotEmpty()
-  productName: string;
+  name: string;
+
+  @IsString()
+  @IsOptional()
+  image: string;
 
   @IsNumber()
   @IsPositive()
+  @Transform(({ value }) => {
+    const num = Number(value);
+    return isNaN(num) ? value : num;
+  })
+  quantity: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Transform(({ value }) => value ? Number(value) : value)
   price: number;
 
   @IsNumber()
-  @Min(1)
-  quantity: number;
-}
-
-export class CreateOrderDtoRequest {
-  @IsUUID()
-  userId: string;
-
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateOrderItemDto)
-  items: CreateOrderItemDto[];
-
-  @IsString()
-  @IsNotEmpty()
-  receiverName: string;
-
-  @Length(10, 15)
-  receiverPhoneNumber: string;
-
-  @IsString()
-  @IsNotEmpty()
-  receiverAddress: string;
+  @IsOptional()
+  @Transform(({ value }) => value ? Number(value) : value)
+  totalPrice: number;
 }
 
 export class CreateOrderDto {
-  @IsUUID()
+  @IsString()
   @IsNotEmpty()
-  userId: string;
+  shippingAddress: string;
+
+  @IsString()
+  @IsNotEmpty()
+  recipient: string;
+
+  @IsString()
+  @IsNotEmpty()
+  phone: string;
+
+  @IsString()
+  @IsNotEmpty()
+  paymentMethod: string; // COD, PayPal, Momo...
+
+  @IsString()
+  user: string; // userId
 
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateOrderItemDto)
-  items: CreateOrderItemDto[];
-
-  @IsString()
-  @IsNotEmpty()
-  receiverName: string;
-
-  @Length(10, 15)
-  receiverPhoneNumber: string;
-
-  @IsString()
-  @IsNotEmpty()
-  receiverAddress: string;
+  orderItems: CreateOrderItemDto[];
 }
 
-// ----- Update Order Status DTO -----
-export class UpdateOrderStatusDto {
-  @IsUUID()
+export class CreateOrderReqDto {
+  @IsString()
   @IsNotEmpty()
-  orderId: string;
+  shippingAddress: string;
 
   @IsString()
-  @IsIn(['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'])
-  status: string;
+  @IsNotEmpty()
+  recipient: string;
 
+  @IsString()
+  @IsNotEmpty()
+  phone: string;
+
+  @IsString()
+  @IsNotEmpty()
+  paymentMethod: string; // COD, PayPal, Momo...
+
+  @IsString()
   @IsOptional()
+  user: string; // userId
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateOrderItemDto)
+  orderItems: CreateOrderItemDto[];
+}
+
+
+export class UpdateOrderDto {
   @IsString()
-  note?: string;
+  @IsNotEmpty()
+  id: string; // orderId
+
+  @IsString()
+  @IsOptional()
+  shippingAddress?: string;
+
+  @IsString()
+  @IsOptional()
+  recipient?: string;
+
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  @IsString()
+  @IsOptional()
+  paymentMethod?: string; // COD, PayPal, Momo...
+
+  @IsNumber()
+  @IsOptional()
+  status?: number; // pending, paid, shipped...
+
+  @IsNumber()
+  @IsOptional()
+  totalPrice?: number;
+}
+
+export class UpdateOrderReqDto {
+  @IsString()
+  @IsOptional()
+  id: string; // orderId
+
+  @IsString()
+  @IsOptional()
+  shippingAddress?: string;
+
+  @IsString()
+  @IsOptional()
+  recipient?: string;
+
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  @IsString()
+  @IsOptional()
+  paymentMethod?: string; // COD, PayPal, Momo...
+
+  @IsNumber()
+  @IsOptional()
+  status?: number; // pending, paid, shipped...
+
+  @IsNumber()
+  @IsOptional()
+  totalPrice?: number;
 }

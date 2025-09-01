@@ -3,7 +3,7 @@ import { Inject, Injectable, Logger, BadRequestException } from '@nestjs/common'
 import { ClientKafka } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { EncryptService } from 'src/encrypt/encrypt.service';
-import { CreateProductDto, UpdateProductDto, DeleteProductDto } from './dto';
+import { CreateProductDto, UpdateProductDto, GetAllDto } from './dto';
 
 
 @Injectable()
@@ -13,17 +13,17 @@ export class ProductService {
   constructor(
     @Inject('PRODUCT_SERVICE') private readonly productClient: ClientKafka,
     private readonly encryptService: EncryptService,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     try {
       [
-        'products.create',
-        'products.update',
-        'products.delete',
-        'products.getAll',
-        'products.getById',
-        'products.getByCategory',
+        'product.create',
+        'product.update',
+        'product.delete',
+        'product.getAll',
+        'product.getProduct',
+        'product.getAllProducts',
       ].forEach((pattern) => this.productClient.subscribeToResponseOf(pattern));
       await this.productClient.connect();
       this.logger.log('Connected to Kafka successfully');
@@ -33,71 +33,44 @@ export class ProductService {
     }
   }
 
-  async createProduct(data: CreateProductDto) {
+  async createProducts(createProductDto: CreateProductDto) {
     this.logger.log('Creating product...');
     try {
-      // Encrypt the data before sending
-      const encryptData = await this.encryptService.Encrypt(data);
-      // Send the request to Kafka
+      // Mã hóa dữ liệu gửi đi
+      const encryptData = await this.encryptService.Encrypt(createProductDto);
+      // Gửi yêu cầu tới Kafka
       const encryptedResponse = await firstValueFrom(
-        this.productClient.send('products.create', encryptData),
+        this.productClient.send('product.create', encryptData),
       );
-      // Decrypt the response
+      // Giải mã dữ liệu nhận về
       const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);
+      // Kiểm tra cấu trúc response
+      if (!decryptedResponse.message || !decryptedResponse.data) {
+        throw new BadRequestException('Invalid response structure from product service');
+      }
       return decryptedResponse;
     } catch (error) {
       this.logger.error(`Failed to create product: ${error.message}`);
       throw new BadRequestException(`Failed to create product: ${error.message}`);
     }
+
   }
 
-  async updateProduct(data: UpdateProductDto) {
-    this.logger.log('Updating product...');
-    try {
-      // Encrypt the data before sending
-      const encryptData = await this.encryptService.Encrypt(data);
-      // Send the request to Kafka
-      const encryptedResponse = await firstValueFrom(
-        this.productClient.send('products.update', encryptData),
-      );
-      // Decrypt the response
-      const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);
-      return decryptedResponse;
-    } catch (error) {
-      this.logger.error(`Failed to update product: ${error.message}`);
-      throw new BadRequestException(`Failed to update product: ${error.message}`);
-    } 
-  }
-
-  async deleteProduct(data: DeleteProductDto) {
-    this.logger.log('Deleting product...');
-    try {
-      // Encrypt the data before sending
-      const encryptData = await this.encryptService.Encrypt(data);
-      // Send the request to Kafka
-      const encryptedResponse = await firstValueFrom(
-        this.productClient.send('products.delete', encryptData),
-      );
-      // Decrypt the response
-      const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);
-      return decryptedResponse;
-    } catch (error) {
-      this.logger.error(`Failed to delete product: ${error.message}`);
-      throw new BadRequestException(`Failed to delete product: ${error.message}`);
-    }
-  }
-
-  async getAllProducts() {
+  async getAll(getAllProductDto: GetAllDto) {
     this.logger.log('Fetching all products...');
     try {
-      // Encrypt the request data (empty object)
-      const encryptData = await this.encryptService.Encrypt({});
-      // Send the request to Kafka
+      // Mã hóa dữ liệu gửi đi (dữ liệu rỗng)
+      const encryptData = await this.encryptService.Encrypt(getAllProductDto);
+      // Gửi yêu cầu tới Kafka
       const encryptedResponse = await firstValueFrom(
-        this.productClient.send('products.getAll', encryptData),
+        this.productClient.send('product.getAll', encryptData),
       );
-      // Decrypt the response
+      // Giải mã dữ liệu nhận về
       const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);
+      // Kiểm tra cấu trúc response
+      if (!decryptedResponse.message || !decryptedResponse.data) {
+        throw new BadRequestException('Invalid response structure from product service');
+      }
       return decryptedResponse;
     } catch (error) {
       this.logger.error(`Failed to fetch products: ${error.message}`);
@@ -105,17 +78,42 @@ export class ProductService {
     }
   }
 
-  async getProductById(id: string) {
+  async getAllProducts() {
+    try {
+      // Mã hóa dữ liệu gửi đi (dữ liệu rỗng)
+      const encryptData = await this.encryptService.Encrypt({});
+      // Gửi yêu cầu tới Kafka
+      const encryptedResponse = await firstValueFrom(
+        this.productClient.send('product.getAllProducts', encryptData),
+      );
+      // Giải mã dữ liệu nhận về
+      const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);
+      // Kiểm tra cấu trúc response
+      if (!decryptedResponse.message || !decryptedResponse.data) {
+        throw new BadRequestException('Invalid response structure from product service');
+      }
+      return decryptedResponse;
+    } catch (error) {
+      this.logger.error(`Failed to fetch products: ${error.message}`);
+      throw new BadRequestException(`Failed to fetch products: ${error.message}`);
+    }
+  }
+
+  async getProduct(id: string) {
     this.logger.log(`Fetching product with ID ${id}...`);
     try {
-      // Encrypt the request data
+      // Mã hóa dữ liệu gửi đi
       const encryptData = await this.encryptService.Encrypt({ id });
-      // Send the request to Kafka
+      // Gửi yêu cầu tới Kafka
       const encryptedResponse = await firstValueFrom(
-        this.productClient.send('products.getById', encryptData),
+        this.productClient.send('product.getProduct', encryptData),
       );
-      // Decrypt the response
+      // Giải mã dữ liệu nhận về
       const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);
+      // Kiểm tra cấu trúc response
+      if (!decryptedResponse.message || !decryptedResponse.data) {
+        throw new BadRequestException('Invalid response structure from product service');
+      }
       return decryptedResponse;
     } catch (error) {
       this.logger.error(`Failed to fetch product: ${error.message}`);
@@ -123,22 +121,47 @@ export class ProductService {
     }
   }
 
-  // get product by category
-  async getProductsByCategory(categoryId: string) {
-    this.logger.log(`Fetching products for category ID ${categoryId}...`);
+  async updateProduct(updateProductDto: UpdateProductDto) {
+    this.logger.log(`Updating product...`);
     try {
-      // Encrypt the request data
-      const encryptData = await this.encryptService.Encrypt({ categoryId });
-      // Send the request to Kafka
+      // Mã hóa dữ liệu gửi đi
+      const encryptData = await this.encryptService.Encrypt(updateProductDto);
+      // Gửi yêu cầu tới Kafka
       const encryptedResponse = await firstValueFrom(
-        this.productClient.send('products.getByCategory', encryptData),
+        this.productClient.send('product.update', encryptData),
       );
-      // Decrypt the response
+      // Giải mã dữ liệu nhận về
       const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);
+      // Kiểm tra cấu trúc response
+      if (!decryptedResponse.message || !decryptedResponse.data) {
+        throw new BadRequestException('Invalid response structure from product service');
+      }
       return decryptedResponse;
     } catch (error) {
-      this.logger.error(`Failed to fetch products by category: ${error.message}`);
-      throw new BadRequestException(`Failed to fetch products by category: ${error.message}`);
+      this.logger.error(`Failed to update product: ${error.message}`);
+      throw new BadRequestException(`Failed to update product: ${error.message}`);
+    }
+  }
+
+  async deleteProduct(id: string) {
+    this.logger.log(`Deleting product with ID ${id}...`);
+    try {
+      // Mã hóa dữ liệu gửi đi
+      const encryptData = await this.encryptService.Encrypt({ id });
+      // Gửi yêu cầu tới Kafka
+      const encryptedResponse = await firstValueFrom(
+        this.productClient.send('product.delete', encryptData),
+      );
+      // Giải mã dữ liệu nhận về
+      const decryptedResponse = await this.encryptService.Decrypt(encryptedResponse);
+      // Kiểm tra cấu trúc response - Delete chỉ cần kiểm tra message
+      if (!decryptedResponse.message) {
+        throw new BadRequestException('Invalid response structure from product service');
+      }
+      return decryptedResponse;
+    } catch (error) {
+      this.logger.error(`Failed to delete product: ${error.message}`);
+      throw new BadRequestException(`Failed to delete product: ${error.message}`);
     }
   }
 }

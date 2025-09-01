@@ -30,9 +30,10 @@ import { BrandsModule } from './brands/brands.module';
           database: 'offline_db',
           entities: [Product, Category, Brand],
           synchronize: configService.get<string>('NODE_ENV', 'development') === 'development',
-          autoLoadEntities: true,
+          // autoLoadEntities: true,
           // synchronize: true,
           // dropSchema: true,
+
           ssl: {
             ca: fs.readFileSync(path.join(certsPath, 'ca.crt')),
             cert: fs.readFileSync(path.join(certsPath, 'client.crt')),
