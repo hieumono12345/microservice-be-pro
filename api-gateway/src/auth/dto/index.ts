@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, MinLength, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, MinLength, IsOptional, Matches, IsIn } from 'class-validator';
 
 export class RegisterDto {
   @IsString()
@@ -9,6 +9,19 @@ export class RegisterDto {
   @IsNotEmpty()
   @MinLength(6)
   password: string;
+
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @IsString()
+  @IsOptional()
+  @Matches(/^\d{10}$/, { message: 'Phone number must be 10 digits' })
+  phoneNumber: string;
+
+  @IsString()
+  @IsOptional()
+  address?: string;
 }
 
 export class LoginDto {
@@ -23,7 +36,7 @@ export class LoginDto {
   @IsOptional()
   @IsString()
   ipAddress?: string;
-  
+
   @IsOptional()
   @IsString()
   userAgent?: string;
@@ -41,7 +54,7 @@ export class RefreshTokenDto {
   @IsOptional()
   @IsString()
   ipAddress?: string;
-  
+
   @IsOptional()
   @IsString()
   userAgent?: string;
@@ -59,7 +72,7 @@ export class LogoutDto {
   @IsOptional()
   @IsString()
   ipAddress?: string;
-  
+
   @IsOptional()
   @IsString()
   userAgent?: string;
@@ -77,4 +90,25 @@ export class ResetPasswordDto {
   @IsString()
   @IsNotEmpty()
   confirmPassword: string;
+}
+
+
+export class UpdateUserDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  @Matches(/^\d{10}$/, { message: 'Phone number must be 10 digits' })
+  phoneNumber?: string;
+
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @IsString()
+  @IsOptional()
+  @IsIn(['admin', 'user'], { message: 'Role must be either admin or user' })
+  role?: string;
 }

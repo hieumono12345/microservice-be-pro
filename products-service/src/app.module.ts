@@ -10,6 +10,7 @@ import { Brand } from './product/entities/brand.entity';
 import * as fs from 'fs';
 import * as path from 'path';
 import { BrandsModule } from './brands/brands.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { BrandsModule } from './brands/brands.module';
     BrandsModule,
     ProductModule,
     CategoriesModule, // Assuming CategoryModule is defined and imported correctly
+    UploadModule,
   ],
 })
 export class AppModule { }

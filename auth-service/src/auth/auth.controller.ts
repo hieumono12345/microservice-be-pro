@@ -6,7 +6,7 @@ import { HttpExceptionFilter } from '../common/filters/http-exception.filter';
 @Controller()
 @UseFilters(HttpExceptionFilter)
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @MessagePattern('auth.register')
   async register(encryptedData: string) {
@@ -40,11 +40,31 @@ export class AuthController {
 
   @MessagePattern('auth.forgot-password')
   async forgotPassword(encryptedData: string) {
-    return this.authService.forgetPassword(encryptedData);
+    return this.authService.handleForgotPassword(encryptedData);
   }
 
   @MessagePattern('auth.resetPassword')
   async resetPassword(encryptedData: string) {
     return this.authService.handleResetPassword(encryptedData);
+  }
+
+  @MessagePattern('auth.get-all')
+  async getAllUsers() {
+    return this.authService.handleGetAllUsers();
+  }
+
+  @MessagePattern('auth.delete-user')
+  async deleteUser(encryptedData: string) {
+    return this.authService.handleDeleteUser(encryptedData);
+  }
+
+  @MessagePattern('auth.get-user')
+  async getUserById(id: string) {
+    return this.authService.getUserById(id);
+  }
+
+  @MessagePattern('auth.update-user')
+  async updateUser(encryptedData: string) {
+    return this.authService.handleUpdateUser(encryptedData);
   }
 }

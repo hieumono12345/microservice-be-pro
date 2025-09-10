@@ -11,13 +11,13 @@ export class ProductController {
   private readonly logger = new Logger(ProductController.name);
   constructor(private readonly productsService: ProductService) { }
 
-  @Get('get-all')
+  @Get('get-all-product')
   getAll(@Query() getAllProductDto: GetAllDto) {
     this.logger.log('Fetching all products...');
     return this.productsService.getAll(getAllProductDto);
   }
-
-  @Get('get-all-product')
+  
+  @Get('get-all')
   getAllProduct() {
     this.logger.log('Fetching all products...');
     return this.productsService.getAllProducts();
@@ -37,6 +37,7 @@ export class ProductController {
   @UseGuards(JwtAuthGuard, new RoleGuard('admin'))
   async create(@Body() createProductDto: CreateProductDto, @Req() request) {
     this.logger.log('Creating product... by ', request.user.username);
+    this.logger.debug('CreateProductDto:', createProductDto);
     return this.productsService.createProducts(createProductDto);
   }
 

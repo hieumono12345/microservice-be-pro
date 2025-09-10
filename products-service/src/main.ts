@@ -20,6 +20,7 @@ async function bootstrap() {
       },
       consumer: {
         groupId: 'product-service-consumer',
+        maxBytes: 20971520, // 20MB - để nhận message lớn
       },
     },
   });

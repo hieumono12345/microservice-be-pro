@@ -12,13 +12,13 @@ export class BrandsController {
   private readonly logger = new Logger(BrandsController.name);
   constructor(private readonly brandsService: BrandsService) { }
 
-  @Get('get-all')
+  @Get('get-all-brand')
   getAll(@Query() getAllBrandDto: GetAllDto) {
     this.logger.log('Fetching all brands...');
     return this.brandsService.getAll(getAllBrandDto);
   }
 
-  @Get('get-all-brand')
+  @Get('get-all')
   getAllBrand() {
     this.logger.log('Fetching all brands...');
     return this.brandsService.getAllBrands();

@@ -57,6 +57,35 @@ export class CreateOrderDto {
   @ValidateNested({ each: true })
   @Type(() => CreateOrderItemDto)
   orderItems: CreateOrderItemDto[];
+
+  // Các field optional mà client có thể gửi lên
+  @Transform(({ value }) => {
+    if (!value) return new Date().toISOString();
+
+    // Thử parse date, nếu lỗi thì dùng current date
+    try {
+      const date = new Date(value);
+      return isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+    } catch {
+      return new Date().toISOString();
+    }
+  })
+  @IsOptional()
+  orderDate?: string;
+
+  @IsNumber()
+  @IsOptional()
+  @Transform(({ value }) => value ? Number(value) : 0)
+  status?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Transform(({ value }) => value ? Number(value) : 0)
+  totalPrice?: number;
+
+  @IsString()
+  @IsOptional()
+  email?: string;
 }
 
 export class CreateOrderReqDto {
@@ -84,6 +113,35 @@ export class CreateOrderReqDto {
   @ValidateNested({ each: true })
   @Type(() => CreateOrderItemDto)
   orderItems: CreateOrderItemDto[];
+
+  // Các field optional mà client có thể gửi lên
+  @Transform(({ value }) => {
+    if (!value) return new Date().toISOString();
+
+    // Thử parse date, nếu lỗi thì dùng current date
+    try {
+      const date = new Date(value);
+      return isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+    } catch {
+      return new Date().toISOString();
+    }
+  })
+  @IsOptional()
+  orderDate?: string;
+
+  @IsNumber()
+  @IsOptional()
+  @Transform(({ value }) => value ? Number(value) : 0)
+  status?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Transform(({ value }) => value ? Number(value) : 0)
+  totalPrice?: number;
+
+  @IsString()
+  @IsOptional()
+  email?: string;
 }
 
 

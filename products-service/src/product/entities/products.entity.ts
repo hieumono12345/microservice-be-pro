@@ -15,10 +15,10 @@ export class Product {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 100, unique: true, collation: 'utf8mb4_unicode_ci' })
+  @Column({ type: 'varchar', length: 500, unique: true, collation: 'utf8mb4_unicode_ci' })
   name: string;
 
-  @Column({ type: 'longtext', nullable: true, collation: 'utf8mb4_unicode_ci' })
+  @Column({ type: 'longtext', nullable: true })
   description: string;
 
   @Column({ type: 'decimal', precision: 15, scale: 2 })

@@ -25,15 +25,7 @@ export class VaultService implements OnModuleInit {
   async onModuleInit() {
     await this.loginWithAppRole();
   }
-
-//   private async loginWithAppRole() {
-//     const result = await this.vaultClient.approleLogin({
-//       role_id: this.roleId,
-//       secret_id: this.secretId,
-//     });
-//     this.vaultClient.token = result.auth.client_token;
-//     console.log('[Vault] Logged in with AppRole');
-//   }
+  
   private async loginWithAppRole() {
     const result = await this.vaultClient.approleLogin({
         role_id: this.roleId,

@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { Injectable, Inject, HttpException, Logger } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
-import { RegisterDto, LoginDto, RefreshTokenDto, LogoutDto, ResetPasswordDto } from './dto';
+import { RegisterDto, LoginDto, RefreshTokenDto, LogoutDto, ResetPasswordDto, UpdateUserDto } from './dto';
 import { firstValueFrom } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
@@ -54,7 +54,11 @@ export class AuthService {
 
   async onModuleInit() {
     try {
-      ['auth.register', 'auth.login', 'auth.verifyEmail', 'auth.refresh-token', 'auth.logout', 'auth.me', 'auth.resetPassword', 'auth.forgot-password'].forEach((pattern) =>
+      [
+        'auth.register', 'auth.login', 'auth.verifyEmail', 'auth.refresh-token',
+        'auth.logout', 'auth.me', 'auth.resetPassword', 'auth.forgot-password',
+        'auth.get-all', 'auth.delete-user', 'auth.get-user', 'auth.update-user'
+      ].forEach((pattern) =>
         this.authClient.subscribeToResponseOf(pattern),
       );
       await this.authClient.connect();
@@ -242,9 +246,12 @@ export class AuthService {
         throw new HttpException('Email is required', 400);
       }
 
+      // encrypt email
+      const encryptedEmail = await this.encrypt({ email });
+
       this.logger.log(`Sending forgot password request for email: ${email}`);
       const response = await firstValueFrom(
-        this.authClient.send('auth.forgot-password', email),
+        this.authClient.send('auth.forgot-password', encryptedEmail),
       );
 
       if (response.statusCode >= 400) {
@@ -253,6 +260,98 @@ export class AuthService {
       }
       return response;
     } catch (error) {
+      throw new HttpException(error.message, 500);
+    }
+  }
+
+  async deleteUser(id: string) {
+    try {
+      if (!id) {
+        this.logger.warn('User ID is required for deletion');
+        throw new HttpException('User ID is required', 400);
+      }
+
+      const encryptedData = await this.encrypt({ id });
+      this.logger.log(`Sending delete user request: ${encryptedData}`);
+
+      const response = await firstValueFrom(
+        this.authClient.send('auth.delete-user', encryptedData),
+      );
+
+      if (response.statusCode >= 400) {
+        this.logger.warn(`Delete user failed: ${response.message}`);
+        throw new HttpException(response.message, response.statusCode);
+      }
+
+      return response;
+    } catch (error) {
+      this.logger.error(`Delete user error: ${error.message}`);
+      throw new HttpException(error.message, 500);
+    }
+  }
+
+  async getAll() {
+    try {
+      this.logger.log('Fetching all users...');
+      const response = await firstValueFrom(
+        this.authClient.send('auth.get-all', {}),
+      );
+      if (response.statusCode >= 400) {
+        this.logger.warn(`Fetch all users failed: ${response.message}`);
+        throw new HttpException(response.message, response.statusCode);
+      }
+
+      return response;
+    } catch (error) {
+      this.logger.error(`Fetch all users error: ${error.message}`);
+      throw new HttpException(error.message, 500);
+    }
+  }
+
+  async getUserById(id: string) {
+    try {
+      if (!id) {
+        this.logger.warn('User ID is required to fetch user details');
+        throw new HttpException('User ID is required', 400);
+      }
+      this.logger.log(`Fetching user with ID: ${id}`);
+      const response = await firstValueFrom(
+        this.authClient.send('auth.get-user', id),
+      );
+      if (response.statusCode >= 400) {
+        this.logger.warn(`Fetch user by ID failed: ${response.message}`);
+        throw new HttpException(response.message, response.statusCode);
+      }
+
+      return response;
+    } catch (error) {
+      this.logger.error(`Fetch user by ID error: ${error.message}`);
+      throw new HttpException(error.message, 500);
+    }
+  }
+
+  async updateUser(id: string, updateData: UpdateUserDto) {
+    try {
+      if (!id) {
+        this.logger.warn('User ID is required for update');
+        throw new HttpException('User ID is required', 400);
+      }
+
+      const encryptedData = await this.encrypt({ id, updateData });
+      this.logger.log(`Sending update user request for ID: ${id}`);
+
+      const response = await firstValueFrom(
+        this.authClient.send('auth.update-user', encryptedData),
+      );
+
+      if (response.statusCode >= 400) {
+        this.logger.warn(`Update user failed: ${response.message}`);
+        throw new HttpException(response.message, response.statusCode);
+      }
+
+      return response;
+    } catch (error) {
+      this.logger.error(`Update user error: ${error.message}`);
       throw new HttpException(error.message, 500);
     }
   }

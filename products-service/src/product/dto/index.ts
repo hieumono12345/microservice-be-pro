@@ -1,14 +1,16 @@
 /* eslint-disable */
 import { Transform } from 'class-transformer';
-import { IsString, IsNotEmpty, IsNumber, IsPositive, IsOptional, IsBoolean, IsInt, Min, IsUUID } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsPositive, IsOptional, IsBoolean, IsInt, Min, IsUUID, MaxLength } from 'class-validator';
 
 export class CreateProductDto {
   @IsString()
   @IsNotEmpty()
+  @MaxLength(500, { message: 'Product name must not exceed 500 characters' })
   name: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(65535, { message: 'Product description must not exceed 65535 characters' })
   description?: string;
 
   @IsNumber()
@@ -41,10 +43,12 @@ export class UpdateProductDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(500, { message: 'Product name must not exceed 500 characters' })
   name?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(65535, { message: 'Product description must not exceed 65535 characters' })
   description?: string;
 
   @IsNumber()

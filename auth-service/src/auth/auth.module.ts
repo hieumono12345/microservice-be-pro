@@ -14,9 +14,11 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
 import { join } from 'path';
 import { UserSession } from './entities/user-session.entity';
 import { RevokedToken } from './entities/revoked-token.entity';
+import { EncryptModule } from '../encrypt/encrypt.module';
 
 @Module({
   imports: [
+    EncryptModule,
     ConfigModule,
     TypeOrmModule.forFeature([User, EmailOtpCode, UserSession, RevokedToken]),
     VaultModule,
@@ -49,4 +51,4 @@ import { RevokedToken } from './entities/revoked-token.entity';
   controllers: [AuthController],
   providers: [AuthService, JwtService, EmailOtpService],
 })
-export class AuthModule {}
+export class AuthModule { }

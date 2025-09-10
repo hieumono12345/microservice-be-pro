@@ -5,7 +5,7 @@ export class RevokedToken {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ length: 64 }) // SHA256 hash là 64 characters
   token: string;
 
   @CreateDateColumn()

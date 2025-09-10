@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, MinLength, Matches } from 'class-validator';
+import { IsString, IsNotEmpty, MinLength, Matches, IsOptional, IsIn } from 'class-validator';
 
 export class RegisterDto {
   @IsString()
@@ -60,4 +60,24 @@ export class LogoutDto {
 
   ipAddress?: string;
   userAgent?: string;
+}
+
+export class UpdateUserDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  @Matches(/^\d{10}$/, { message: 'Phone number must be 10 digits' })
+  phoneNumber?: string;
+
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @IsString()
+  @IsOptional()
+  @IsIn(['admin', 'user'], { message: 'Role must be either admin or user' })
+  role?: string;
 }

@@ -12,14 +12,14 @@ export class CategoriesController {
   private readonly logger = new Logger(CategoriesController.name);
   constructor(private readonly categoriesService: CategoryService) { }
 
-  @Get('get-all')
+  @Get('get-all-category')
   getAll(@Query() getAllCategoryDto: GetAllDto) {
     this.logger.log('Fetching all categories ...');
     // kiểm tra page, pageSize, sortBy, sortOrder
     return this.categoriesService.getAll(getAllCategoryDto);
   }
 
-  @Get('get-all-category')
+  @Get('get-all')
   getAllCategory() {
     this.logger.log('Fetching all categories...');
     return this.categoriesService.getAllCategory();
